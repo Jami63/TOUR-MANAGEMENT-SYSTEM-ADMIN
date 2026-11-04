@@ -56,6 +56,28 @@ class PaymentController extends Controller
     }
 
     /**
+     * List all pending payments for Tour Manager to verify
+     */
+    public function pending(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'manager') {
+            return response()->json(['success' => false, 'message' => 'Only Tour Managers can view pending payments'], 403);
+        }
+
+        $payments = Payment::with(['share.expense.tour', 'share.tourMember.user'])
+            ->where('status', 'pending')
+            ->latest('submitted_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'payments' => $payments,
+        ]);
+    }
+
+    /**
      * Verify or Reject a payment (Tour Manager)
      */
     public function verify(Request $request, int $paymentId): JsonResponse
@@ -101,6 +123,115 @@ class PaymentController extends Controller
             'success' => true,
             'message' => "Payment has been marked as {$validated['status']}",
             'payment' => $payment->load('verification'),
+        ]);
+    }
+
+    /**
+     * Get member's payment history (all or filtered by tour)
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $tourId = $request->query('tour_id');
+
+        $query = Payment::with([
+            'share.expense.tour',
+            'share.expense.category',
+            'verification.verifier',
+        ])
+        ->whereHas('share.tourMember', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        });
+
+        if ($tourId) {
+            $query->whereHas('share.expense', function ($q) use ($tourId) {
+                $q->where('tour_id', $tourId);
+            });
+        }
+
+        $payments = $query->latest('submitted_at')->get();
+
+        $paymentsData = $payments->map(function ($p) {
+            return [
+                'id' => $p->id,
+                'share_id' => $p->share_id,
+                'tour_id' => $p->share?->expense?->tour_id,
+                'tour_name' => $p->share?->expense?->tour?->tour_name ?? 'Tour',
+                'expense_name' => $p->share?->expense?->expense_name ?? 'General Expense',
+                'category_name' => $p->share?->expense?->category?->category_name ?? 'General',
+                'amount' => (float) $p->amount,
+                'method' => $p->method,
+                'transaction_id' => $p->transaction_id,
+                'proof_file' => $p->proof_file,
+                'status' => $p->status,
+                'submitted_at' => $p->submitted_at?->format('d M, Y h:i A') ?? $p->created_at?->format('d M, Y h:i A'),
+                'verified_at' => $p->verification?->decided_at?->format('d M, Y h:i A'),
+                'verifier_name' => $p->verification?->verifier?->full_name,
+                'reject_reason' => $p->verification?->reject_reason,
+            ];
+        });
+
+        $totalSubmitted = $paymentsData->sum('amount');
+        $totalVerified = $paymentsData->where('status', 'verified')->sum('amount');
+        $totalPending = $paymentsData->where('status', 'pending')->sum('amount');
+        $totalRejected = $paymentsData->where('status', 'rejected')->sum('amount');
+
+        return response()->json([
+            'success' => true,
+            'summary' => [
+                'total_submitted' => (float) $totalSubmitted,
+                'total_verified' => (float) $totalVerified,
+                'total_pending' => (float) $totalPending,
+                'total_rejected' => (float) $totalRejected,
+                'total_count' => $paymentsData->count(),
+            ],
+            'payments' => $paymentsData,
+        ]);
+    }
+
+    /**
+     * Get specific payment details with verification proof
+     */
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $payment = Payment::with([
+            'share.expense.tour',
+            'share.expense.category',
+            'verification.verifier',
+        ])->find($id);
+
+        if (! $payment) {
+            return response()->json(['success' => false, 'message' => 'Payment not found'], 404);
+        }
+
+        $isOwner = $payment->share?->tourMember?->user_id === $user->id;
+        $isManager = $payment->share?->expense?->tour?->created_by === $user->id || $user->role === 'manager';
+
+        if (! $isOwner && ! $isManager) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'payment' => [
+                'id' => $payment->id,
+                'share_id' => $payment->share_id,
+                'tour_id' => $payment->share?->expense?->tour_id,
+                'tour_name' => $payment->share?->expense?->tour?->tour_name ?? 'Tour',
+                'expense_name' => $payment->share?->expense?->expense_name ?? 'General Expense',
+                'category_name' => $payment->share?->expense?->category?->category_name ?? 'General',
+                'amount' => (float) $payment->amount,
+                'method' => $payment->method,
+                'transaction_id' => $payment->transaction_id,
+                'proof_file' => $payment->proof_file,
+                'status' => $payment->status,
+                'submitted_at' => $payment->submitted_at?->format('d M, Y h:i A') ?? $payment->created_at?->format('d M, Y h:i A'),
+                'verified_at' => $payment->verification?->decided_at?->format('d M, Y h:i A'),
+                'verifier_name' => $payment->verification?->verifier?->full_name,
+                'reject_reason' => $payment->verification?->reject_reason,
+            ],
         ]);
     }
 }
