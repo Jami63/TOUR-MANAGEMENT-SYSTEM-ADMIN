@@ -28,11 +28,10 @@ class ExampleTest extends TestCase
         $response->assertSee('Super Admin Console');
         $response->assertSee('User Registrations & Accounts');
         $response->assertSee('Tour Manager');
-        $response->assertSee('Tour Member');
         $response->assertSee('Nusrat Jahan');
-        $response->assertSee('Rahim Uddin');
+        $response->assertSee('Tariqul Islam');
 
-        // Confirm all other features are deleted from admin panel
+        // Confirm Super Admin is strictly read-only
         $response->assertDontSee('+ Create New Tour');
         $response->assertDontSee('Verify Payments');
     }

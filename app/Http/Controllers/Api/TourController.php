@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Refund;
 use App\Models\Tour;
 use App\Models\TourDestination;
 use App\Models\TourMember;
@@ -191,6 +192,85 @@ class TourController extends Controller
             'success' => true,
             'message' => 'Tour finished early due to emergency',
             'settlement' => $financials,
+        ]);
+    }
+
+    /**
+     * Get tour refunds list (Requirement 7)
+     */
+    public function refunds(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->find($id);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        $refunds = Refund::where('tour_id', $tour->id)
+            ->with(['tourMember', 'refundedBy'])
+            ->get();
+
+        $data = $refunds->map(function ($r) {
+            return [
+                'id' => $r->id,
+                'tour_id' => $r->tour_id,
+                'tour_member_id' => $r->tour_member_id,
+                'member_name' => $r->tourMember?->display_name ?? 'Member',
+                'member_phone' => $r->tourMember?->display_phone ?? '',
+                'refund_amount' => (float) $r->refund_amount,
+                'status' => $r->status,
+                'method' => $r->method ?? 'Cash',
+                'refund_date' => $r->refund_date?->format('d M, Y'),
+                'notes' => $r->notes,
+                'refunded_by' => $r->refundedBy?->full_name,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'refunds' => $data,
+            'total_refundable' => (float) $refunds->sum('refund_amount'),
+            'total_refunded' => (float) $refunds->where('status', 'refunded')->sum('refund_amount'),
+            'total_pending' => (float) $refunds->where('status', 'pending')->sum('refund_amount'),
+        ]);
+    }
+
+    /**
+     * Update refund status manually (Requirement 7)
+     */
+    public function updateRefundStatus(Request $request, int $refundId, SettlementService $service): JsonResponse
+    {
+        $user = $request->user();
+        $refund = Refund::with('tour')->findOrFail($refundId);
+
+        if (! $refund->tour || $refund->tour->created_by !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,refunded'],
+            'method' => ['nullable', 'string', 'max:50'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $service->updateRefundStatus(
+            $refund,
+            $validated['status'],
+            $validated['method'] ?? 'Cash',
+            $user,
+            $validated['notes'] ?? null
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund status updated successfully',
+            'refund' => [
+                'id' => $refund->id,
+                'status' => $refund->status,
+                'method' => $refund->method,
+                'refund_date' => $refund->refund_date?->format('d M, Y'),
+                'notes' => $refund->notes,
+            ],
         ]);
     }
 }

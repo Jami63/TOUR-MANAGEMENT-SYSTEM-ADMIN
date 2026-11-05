@@ -31,15 +31,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tours/{id}/settlement-preview', [TourController::class, 'settlementPreview']);
     Route::post('/tours/{id}/finish', [TourController::class, 'finish']);
     Route::post('/tours/{id}/emergency-finish', [TourController::class, 'emergencyFinish']);
+    Route::get('/tours/{id}/refunds', [TourController::class, 'refunds']);
+    Route::post('/refunds/{refundId}/status', [TourController::class, 'updateRefundStatus']);
 
     // Tour Participants & Members API (Screens 12 & 34)
     Route::get('/tours/{tourId}/members', [TourMemberController::class, 'index']);
     Route::post('/tours/{tourId}/members', [TourMemberController::class, 'store']);
+    Route::delete('/tours/{tourId}/members/{memberId}', [TourMemberController::class, 'destroy']);
     Route::get('/users/search', [TourMemberController::class, 'searchUsers']);
 
     // Expenses & Auto-Split API
     Route::get('/tours/{tourId}/expenses', [ExpenseController::class, 'index']);
     Route::post('/tours/{tourId}/expenses', [ExpenseController::class, 'store']);
+
+    // Manual Payment API (Tour Manager logs payments directly per expense - Requirement 4)
+    Route::post('/tours/{tourId}/expenses/{expenseId}/payment', [PaymentController::class, 'recordManualPayment']);
 
     // Payments API (Screens 23, 37, 38 & 39)
     Route::get('/payments/pending', [PaymentController::class, 'pending']);

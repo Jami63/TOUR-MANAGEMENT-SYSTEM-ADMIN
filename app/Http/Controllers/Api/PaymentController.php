@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ExpenseShare;
 use App\Models\Payment;
 use App\Models\PaymentVerification;
+use App\Models\Tour;
 use App\Models\TourTimeline;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -233,5 +234,74 @@ class PaymentController extends Controller
                 'reject_reason' => $payment->verification?->reject_reason,
             ],
         ]);
+    }
+
+    /**
+     * Tour Manager manually records a payment for a member on an expense (Requirement 4).
+     * No online payment gateway!
+     */
+    public function recordManualPayment(Request $request, int $tourId, int $expenseId): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+            return response()->json(['success' => false, 'message' => 'Only the Tour Manager can record payments'], 403);
+        }
+
+        $validated = $request->validate([
+            'tour_member_id' => ['required', 'exists:tour_members,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string', 'max:50'],
+            'transaction_id' => ['nullable', 'string', 'max:100'],
+            'payment_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $share = ExpenseShare::firstOrCreate(
+            [
+                'expense_id' => $expenseId,
+                'tour_member_id' => $validated['tour_member_id'],
+            ],
+            [
+                'share_amount' => 0.00,
+            ]
+        );
+
+        $payment = Payment::create([
+            'share_id' => $share->id,
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'payment_date' => $validated['payment_date'] ?? now()->toDateString(),
+            'transaction_id' => $validated['transaction_id'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'verified',
+            'received_by' => $currentUser->id,
+            'submitted_at' => now(),
+        ]);
+
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
+        $share->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment recorded successfully',
+            'payment' => $payment,
+            'share' => [
+                'id' => $share->id,
+                'share_amount' => (float) $share->share_amount,
+                'paid_amount' => (float) $share->paidAmount(),
+                'remaining_due' => (float) $share->remainingDue(),
+                'payment_status' => $share->paymentStatus(),
+            ],
+            'tour_total_collected' => (float) $tour->total_collected,
+        ], 201);
     }
 }
