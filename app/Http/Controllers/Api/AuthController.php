@@ -43,6 +43,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $user->role,
+                'profile_picture' => $user->profile_picture,
             ],
         ], 201);
     }
@@ -78,6 +79,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $user->role,
+                'profile_picture' => $user->profile_picture,
             ],
         ]);
     }
@@ -97,6 +99,76 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'role' => $user->role,
+                'profile_picture' => $user->profile_picture,
+            ],
+        ]);
+    }
+
+    /**
+     * Update Profile Photo API (Add / Change Tour Manager Image)
+     */
+    public function updateProfilePhoto(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($request->boolean('clear')) {
+            $user->profile_picture = null;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile picture cleared successfully',
+                'user' => [
+                    'id' => $user->id,
+                    'full_name' => $user->full_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'role' => $user->role,
+                    'profile_picture' => null,
+                ],
+            ]);
+        }
+
+        $request->validate([
+            'profile_picture' => ['required', 'string'],
+        ]);
+
+        $user->profile_picture = $request->input('profile_picture');
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile picture updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'profile_picture' => $user->profile_picture,
+            ],
+        ]);
+    }
+
+    /**
+     * Clear Profile Photo API (Remove Tour Manager Image)
+     */
+    public function clearProfilePhoto(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->profile_picture = null;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile picture cleared successfully',
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+                'profile_picture' => null,
             ],
         ]);
     }
