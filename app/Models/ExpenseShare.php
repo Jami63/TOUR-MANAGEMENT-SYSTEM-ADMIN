@@ -38,4 +38,44 @@ class ExpenseShare extends Model
     {
         return $this->hasMany(Payment::class, 'share_id');
     }
+
+    public function paidAmount(): float
+    {
+        return (float) $this->payments()->where('status', 'verified')->sum('amount');
+    }
+
+    public function remainingDue(): float
+    {
+        return max(0.0, round((float) $this->share_amount - $this->paidAmount(), 2));
+    }
+
+    public function paymentStatus(): string
+    {
+        $paid = $this->paidAmount();
+        $share = (float) $this->share_amount;
+
+        if ($paid >= $share && $share > 0) {
+            return 'Paid';
+        }
+        if ($paid > 0) {
+            return 'Partial';
+        }
+
+        return 'Pending';
+    }
+
+    public function getPaidAmountAttribute(): float
+    {
+        return $this->paidAmount();
+    }
+
+    public function getRemainingDueAttribute(): float
+    {
+        return $this->remainingDue();
+    }
+
+    public function getPaymentStatusAttribute(): string
+    {
+        return $this->paymentStatus();
+    }
 }

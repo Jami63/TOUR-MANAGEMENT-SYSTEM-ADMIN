@@ -15,9 +15,12 @@ class Payment extends Model
         'share_id',
         'amount',
         'method',
+        'payment_date',
         'transaction_id',
+        'notes',
         'proof_file',
         'status',
+        'received_by',
         'submitted_at',
     ];
 
@@ -25,6 +28,7 @@ class Payment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'payment_date' => 'date',
             'submitted_at' => 'datetime',
         ];
     }
@@ -32,6 +36,11 @@ class Payment extends Model
     public function share(): BelongsTo
     {
         return $this->belongsTo(ExpenseShare::class, 'share_id');
+    }
+
+    public function receivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
     }
 
     public function verification(): HasOne

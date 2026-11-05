@@ -11,6 +11,7 @@ class Refund extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tour_id',
         'tour_member_id',
         'total_paid',
         'final_share',
@@ -18,6 +19,8 @@ class Refund extends Model
         'refund_amount',
         'method',
         'refund_date',
+        'notes',
+        'refunded_by',
         'status',
     ];
 
@@ -32,8 +35,18 @@ class Refund extends Model
         ];
     }
 
+    public function tour(): BelongsTo
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
+
     public function tourMember(): BelongsTo
     {
         return $this->belongsTo(TourMember::class, 'tour_member_id');
+    }
+
+    public function refundedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'refunded_by');
     }
 }

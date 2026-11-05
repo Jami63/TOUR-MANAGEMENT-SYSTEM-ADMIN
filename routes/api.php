@@ -28,6 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tours', [TourController::class, 'index']);
     Route::post('/tours', [TourController::class, 'store']);
     Route::get('/tours/{id}', [TourController::class, 'show']);
+    Route::get('/tours/{id}/settlement-preview', [TourController::class, 'settlementPreview']);
+    Route::post('/tours/{id}/finish', [TourController::class, 'finish']);
+    Route::post('/tours/{id}/emergency-finish', [TourController::class, 'emergencyFinish']);
 
     // Tour Participants & Members API (Screens 12 & 34)
     Route::get('/tours/{tourId}/members', [TourMemberController::class, 'index']);

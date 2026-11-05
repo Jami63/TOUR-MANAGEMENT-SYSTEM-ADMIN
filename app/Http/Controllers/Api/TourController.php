@@ -7,6 +7,7 @@ use App\Models\Tour;
 use App\Models\TourDestination;
 use App\Models\TourMember;
 use App\Models\TourTimeline;
+use App\Services\SettlementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,9 +29,9 @@ class TourController extends Controller
             $tours = Tour::whereHas('members', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
-            ->with(['destinations', 'creator'])
-            ->latest()
-            ->get();
+                ->with(['destinations', 'creator'])
+                ->latest()
+                ->get();
         }
 
         return response()->json([
@@ -127,6 +128,69 @@ class TourController extends Controller
                 'total_spent' => (float) $totalSpent,
                 'total_members' => $tour->members->count(),
             ],
+        ]);
+    }
+
+    /**
+     * Preview settlement calculations before completing tour
+     */
+    public function settlementPreview(int $id, SettlementService $service): JsonResponse
+    {
+        $tour = Tour::find($id);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        $financials = $service->calculateTourFinancials($tour);
+
+        return response()->json([
+            'success' => true,
+            'settlement' => $financials,
+        ]);
+    }
+
+    /**
+     * Finish Tour normally
+     */
+    public function finish(Request $request, int $id, SettlementService $service): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->find($id);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        $financials = $service->finishTour($tour, $user, $request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tour finished successfully',
+            'settlement' => $financials,
+        ]);
+    }
+
+    /**
+     * Emergency Finish Tour
+     */
+    public function emergencyFinish(Request $request, int $id, SettlementService $service): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->find($id);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        $validated = $request->validate([
+            'emergency_reason' => ['required', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $financials = $service->emergencyFinishTour($tour, $user, $validated['emergency_reason'], $validated['notes'] ?? null);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tour finished early due to emergency',
+            'settlement' => $financials,
         ]);
     }
 }

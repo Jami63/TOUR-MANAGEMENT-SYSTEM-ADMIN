@@ -56,7 +56,7 @@
     </style>
 </head>
 <body class="bg-background text-on-surface antialiased">
-    <!-- Sidebar Navigation (Only Super Admin Console) -->
+    <!-- Sidebar Navigation (Super Admin Read-Only Console) -->
     <aside class="fixed left-0 top-0 h-full w-[72px] lg:w-[264px] bg-[#071c36] z-50 flex flex-col justify-between transition-all duration-300 shadow-lg">
         <div class="flex flex-col">
             <!-- Brand Logo -->
@@ -76,16 +76,45 @@
             <div class="hidden lg:block px-6 my-4">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 text-primary-fixed text-xs tracking-wide border border-primary/30">
                     <span class="w-1.5 h-1.5 rounded-full bg-primary-fixed animate-pulse"></span>
-                    Super Admin Console
+                    Strictly Read-Only Monitor
                 </div>
             </div>
 
-            <!-- Single Dedicated Nav: User Accounts Activity -->
+            <!-- Navigation Links -->
             <nav class="flex flex-col gap-1 px-2 lg:px-3 pt-2 text-sm">
+                <!-- Dashboard & User Accounts -->
                 <a href="{{ route('admin.dashboard') }}"
-                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-white relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-tertiary-container before:rounded-r shadow-sm">
-                    <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
-                    <span class="hidden lg:inline font-semibold truncate">User Registrations</span>
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-primary text-white shadow-sm font-semibold' : 'text-outline-variant hover:bg-white/5 hover:text-white' }} transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span class="hidden lg:inline truncate">Overview &amp; Users</span>
+                </a>
+
+                <!-- All Tours Monitoring -->
+                <a href="{{ route('admin.tours.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.tours.*') ? 'bg-primary text-white shadow-sm font-semibold' : 'text-outline-variant hover:bg-white/5 hover:text-white' }} transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">travel_explore</span>
+                    <span class="hidden lg:inline truncate">All Tours Monitoring</span>
+                </a>
+
+                <!-- Master Expenses Audit -->
+                <a href="{{ route('admin.expenses.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.expenses.*') ? 'bg-primary text-white shadow-sm font-semibold' : 'text-outline-variant hover:bg-white/5 hover:text-white' }} transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                    <span class="hidden lg:inline truncate">Expenses Audit</span>
+                </a>
+
+                <!-- Master Payments Audit -->
+                <a href="{{ route('admin.payments.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.payments.*') ? 'bg-primary text-white shadow-sm font-semibold' : 'text-outline-variant hover:bg-white/5 hover:text-white' }} transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    <span class="hidden lg:inline truncate">Payments Audit</span>
+                </a>
+
+                <!-- Refunds Monitoring -->
+                <a href="{{ route('admin.refunds.index') }}"
+                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg {{ request()->routeIs('admin.refunds.*') ? 'bg-primary text-white shadow-sm font-semibold' : 'text-outline-variant hover:bg-white/5 hover:text-white' }} transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">currency_exchange</span>
+                    <span class="hidden lg:inline truncate">Refunds Monitoring</span>
                 </a>
             </nav>
         </div>
@@ -94,7 +123,7 @@
         <div class="p-3 border-t border-white/10">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:bg-error/20 hover:text-red-300 transition-colors group text-sm">
+                <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:bg-error/20 hover:text-red-300 transition-colors group text-sm cursor-pointer">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
                     <span class="hidden lg:inline truncate font-medium">Logout</span>
                 </button>
@@ -108,9 +137,9 @@
         <header class="sticky top-0 z-40 h-[72px] bg-white/90 backdrop-blur-xl border-b border-outline-variant/30 px-4 lg:px-8">
             <div class="h-full max-w-[1440px] mx-auto flex items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Platform Administration</span>
+                    <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Super Admin Console</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span class="text-xs text-outline font-medium">Live Account Activity</span>
+                    <span class="text-xs text-outline font-medium">Read-Only Monitoring Mode</span>
                 </div>
 
                 <!-- Admin User Info -->
@@ -121,12 +150,31 @@
                         </div>
                         <div class="flex flex-col text-left">
                             <span class="text-xs font-bold text-on-surface leading-tight">{{ Auth::user()->full_name }}</span>
-                            <span class="text-[10px] text-primary font-semibold">Super Admin</span>
+                            <span class="text-[10px] text-primary font-semibold">Super Administrator</span>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
+
+        <!-- Flash Alerts -->
+        @if (session('success'))
+            <div class="max-w-[1440px] mx-auto w-full px-4 lg:px-8 pt-4">
+                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                    <span>{{ session('success') }}</span>
+                </div>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="max-w-[1440px] mx-auto w-full px-4 lg:px-8 pt-4">
+                <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs sm:text-sm flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">error</span>
+                    <span>{{ session('error') }}</span>
+                </div>
+            </div>
+        @endif
 
         <!-- Main Content -->
         <main class="flex-1 w-full bg-surface py-6 px-4 lg:px-8">

@@ -114,7 +114,7 @@ class PaymentController extends Controller
         // Timeline event
         TourTimeline::create([
             'tour_id' => $payment->share->expense->tour_id,
-            'event_type' => 'payment_' . $validated['status'],
+            'event_type' => 'payment_'.$validated['status'],
             'description' => "Payment of ৳{$payment->amount} was {$validated['status']} by {$user->full_name}",
             'created_by' => $user->id,
         ]);
@@ -139,9 +139,9 @@ class PaymentController extends Controller
             'share.expense.category',
             'verification.verifier',
         ])
-        ->whereHas('share.tourMember', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        });
+            ->whereHas('share.tourMember', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
 
         if ($tourId) {
             $query->whereHas('share.expense', function ($q) use ($tourId) {

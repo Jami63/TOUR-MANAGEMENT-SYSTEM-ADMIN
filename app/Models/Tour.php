@@ -22,6 +22,13 @@ class Tour extends Model
         'description',
         'other_info',
         'status',
+        'finish_type',
+        'finished_at',
+        'emergency_reason',
+        'settlement_notes',
+        'total_collected',
+        'total_actual_expense',
+        'total_refund_amount',
         'is_archived',
     ];
 
@@ -31,6 +38,10 @@ class Tour extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'estimated_budget' => 'decimal:2',
+            'finished_at' => 'datetime',
+            'total_collected' => 'decimal:2',
+            'total_actual_expense' => 'decimal:2',
+            'total_refund_amount' => 'decimal:2',
             'is_archived' => 'boolean',
         ];
     }
@@ -70,5 +81,32 @@ class Tour extends Model
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class, 'tour_id');
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class, 'tour_id');
+    }
+
+    public function isFinished(): bool
+    {
+        return in_array($this->status, ['completed', 'emergency_finished']);
+    }
+
+    public function isEmergencyFinished(): bool
+    {
+        return $this->finish_type === 'emergency' || $this->status === 'emergency_finished';
+    }
+
+    public function totalActualExpenses(): float
+    {
+        return (float) $this->expenses()->sum('total_amount');
+    }
+
+    public function totalCollectedMoney(): float
+    {
+        return (float) Payment::whereHas('share.expense', function ($q) {
+            $q->where('tour_id', $this->id);
+        })->where('status', 'verified')->sum('amount');
     }
 }

@@ -15,9 +15,16 @@ class TourMember extends Model
     protected $fillable = [
         'tour_id',
         'user_id',
+        'name',
+        'phone',
+        'email',
         'tour_role',
         'status',
         'joined_at',
+    ];
+
+    protected $appends = [
+        'display_name',
     ];
 
     protected function casts(): array
@@ -25,6 +32,54 @@ class TourMember extends Model
         return [
             'joined_at' => 'datetime',
         ];
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->user && ! empty($this->user->full_name)) {
+            return $this->user->full_name;
+        }
+
+        return $this->name ?? 'Member #'.$this->id;
+    }
+
+    public function getDisplayPhoneAttribute(): ?string
+    {
+        return $this->user?->phone ?? $this->phone;
+    }
+
+    public function getDisplayEmailAttribute(): ?string
+    {
+        return $this->user?->email ?? $this->email;
+    }
+
+    /**
+     * Total amount actually paid by this member across all tour expense shares.
+     */
+    public function totalPaidAmount(): float
+    {
+        return (float) Payment::whereHas('share', function ($q) {
+            $q->where('tour_member_id', $this->id);
+        })->where('status', 'verified')->sum('amount');
+    }
+
+    /**
+     * Total expense share assigned to this member.
+     */
+    public function totalShareAmount(): float
+    {
+        return (float) $this->expenseShares()->sum('share_amount');
+    }
+
+    /**
+     * Net balance = Total Amount Paid − Equal Share of Actual Expenses.
+     * Positive = Refund due to member
+     * Zero = Fully settled
+     * Negative = Member still owes money (due)
+     */
+    public function netBalance(): float
+    {
+        return round($this->totalPaidAmount() - $this->totalShareAmount(), 2);
     }
 
     public function tour(): BelongsTo

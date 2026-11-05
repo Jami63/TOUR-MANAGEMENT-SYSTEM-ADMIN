@@ -34,7 +34,7 @@ class ApiTest extends TestCase
         $user = User::where('email', 'manager@safarflow.test')->first();
         $token = $user->createToken('test')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/tours');
 
         $response->assertStatus(200);

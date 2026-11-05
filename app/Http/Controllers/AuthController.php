@@ -17,7 +17,9 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('admin.dashboard');
+            return Auth::user()->isSuperAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('manager.dashboard');
         }
 
         return view('auth.login');
@@ -36,7 +38,11 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.dashboard'));
+            if (Auth::user()->isSuperAdmin()) {
+                return redirect()->intended(route('admin.dashboard'));
+            }
+
+            return redirect()->intended(route('manager.dashboard'));
         }
 
         return back()->withErrors([
@@ -50,7 +56,9 @@ class AuthController extends Controller
     public function showRegister(): View|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('admin.dashboard');
+            return Auth::user()->isSuperAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('manager.dashboard');
         }
 
         return view('auth.register');
@@ -80,7 +88,11 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('admin.dashboard')->with('success', 'Account created successfully!');
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard')->with('success', 'Account created successfully!');
+        }
+
+        return redirect()->route('manager.dashboard')->with('success', 'Tour Manager account created successfully!');
     }
 
     /**

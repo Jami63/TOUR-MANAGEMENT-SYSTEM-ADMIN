@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ExpenseShare;
-use App\Models\Payment;
 use App\Models\Tour;
 use App\Models\TourMember;
 use App\Models\TourTimeline;
@@ -30,7 +28,7 @@ class TourMemberController extends Controller
 
         $participants = $members->map(function ($member) {
             $totalShare = $member->expenseShares->sum('share_amount');
-            
+
             $totalPaid = 0;
             $totalPending = 0;
 
