@@ -33,17 +33,6 @@
         </div>
     @endif
 
-    <!-- Super Admin Quick-Fill Pill -->
-    <div class="mb-5 p-3 rounded-xl bg-surface-container-low border border-primary/20 flex items-center justify-between">
-        <div>
-            <span class="text-xs font-bold text-primary block">Super Admin Login:</span>
-            <span class="text-[11px] text-secondary">admin@safarflow.test / password</span>
-        </div>
-        <button type="button" onclick="fillDemo('admin@safarflow.test', 'password')" class="px-2.5 py-1 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary-container transition-colors shadow-sm">
-            Auto-fill
-        </button>
-    </div>
-
     <!-- Login Form -->
     <form action="{{ route('login') }}" method="POST" class="space-y-4">
         @csrf
@@ -116,11 +105,6 @@
             input.type = 'password';
             icon.textContent = 'visibility';
         }
-    }
-
-    function fillDemo(email, pass) {
-        document.getElementById('email').value = email;
-        document.getElementById('password').value = pass;
     }
 </script>
 @endsection
