@@ -1,4 +1,4 @@
-@extends('layouts.auth', ['title' => 'Login – SafarFlow Tour Management'])
+@extends('layouts.auth', ['title' => 'Login – SafarFly Tour Management'])
 
 @section('content')
 <div class="w-full max-w-[460px] p-6 sm:p-8 bg-white rounded-[24px] shadow-xl shadow-[#0B1F3A]/5 border border-outline-variant/30">

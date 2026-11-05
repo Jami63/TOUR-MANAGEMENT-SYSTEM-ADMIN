@@ -1,4 +1,4 @@
-@extends('layouts.manager', ['title' => 'Create New Expedition – SafarFlow'])
+@extends('layouts.manager', ['title' => 'Create New Expedition – SafarFly'])
 
 @section('content')
 <div class="max-w-[760px] mx-auto flex flex-col gap-6">

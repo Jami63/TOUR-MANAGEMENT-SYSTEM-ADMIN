@@ -1,4 +1,4 @@
-@extends('layouts.auth', ['title' => 'Create Account – SafarFlow Tour Management'])
+@extends('layouts.auth', ['title' => 'Create Account – SafarFly Tour Management'])
 
 @section('content')
 <div class="w-full max-w-[480px] p-6 sm:p-8 bg-white rounded-[24px] shadow-xl shadow-[#0B1F3A]/5 border border-outline-variant/30">
@@ -124,7 +124,7 @@
         <!-- Submit Button -->
         <div class="pt-2">
             <button type="submit" class="w-full h-[52px] rounded-xl font-bold tracking-wide flex items-center justify-center gap-2 bg-[#008373] text-white shadow-md shadow-primary/20 hover:bg-[#00685b] transition-all cursor-pointer">
-                <span>Create SafarFlow Account</span>
+                <span>Create SafarFly Account</span>
                 <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
         </div>

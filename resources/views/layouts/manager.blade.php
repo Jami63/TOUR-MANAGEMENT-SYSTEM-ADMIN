@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>{{ $title ?? 'Tour Manager Console – SafarFlow' }}</title>
+    <title>{{ $title ?? 'Tour Manager Console – SafarFly' }}</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -66,7 +66,7 @@
                         <span class="material-symbols-outlined text-white text-[22px]">explore</span>
                     </div>
                     <div class="hidden lg:flex flex-col">
-                        <span class="font-display text-lg font-bold tracking-tight text-white leading-none">SafarFlow</span>
+                        <span class="font-display text-lg font-bold tracking-tight text-white leading-none">SafarFly</span>
                         <span class="text-[10px] text-primary-fixed tracking-wider uppercase mt-1">Tour Manager</span>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'All Tours Monitoring – SafarFlow Super Admin'])
+@extends('layouts.admin', ['title' => 'All Tours Monitoring – SafarFly Super Admin'])
 
 @section('content')
 <div class="flex flex-col gap-6">

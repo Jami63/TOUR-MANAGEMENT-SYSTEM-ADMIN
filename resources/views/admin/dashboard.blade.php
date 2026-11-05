@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Super Admin Dashboard – SafarFlow'])
+@extends('layouts.admin', ['title' => 'Super Admin Dashboard – SafarFly'])
 
 @section('content')
 <div class="flex flex-col gap-6">
@@ -13,7 +13,7 @@
                 User Registrations &amp; Accounts
             </h1>
             <p class="text-xs sm:text-sm text-secondary mt-1">
-                Live monitoring of everyone who creates an account on SafarFlow as a Tour Manager or Tour Member.
+                Live monitoring of everyone who creates an account on SafarFly as a Tour Manager or Tour Member.
             </p>
         </div>
         <div class="flex items-center gap-2">

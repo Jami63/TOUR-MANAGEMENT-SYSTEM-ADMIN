@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>{{ $title ?? 'SafarFlow – Tour & Expense Management' }}</title>
+    <title>{{ $title ?? 'SafarFly – Tour & Expense Management' }}</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect">
@@ -80,7 +80,7 @@
                         <span class="material-symbols-outlined text-white text-[22px]">near_me</span>
                         <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#FF7A59] border-2 border-[#0B1F3A]"></span>
                     </div>
-                    <span class="font-display text-2xl text-white tracking-tight font-extrabold">SafarFlow</span>
+                    <span class="font-display text-2xl text-white tracking-tight font-extrabold">SafarFly</span>
                 </div>
                 <div class="text-xs uppercase tracking-wider text-primary-fixed bg-white/10 px-3 py-1 rounded-full border border-white/10">
                     Tour & Expense Management
@@ -175,7 +175,7 @@
 
             <!-- Footer -->
             <div class="relative z-10 pt-4 flex items-center justify-between text-white/60 text-xs">
-                <span>&copy; {{ date('Y') }} SafarFlow System</span>
+                <span>&copy; {{ date('Y') }} SafarFly System</span>
                 <span class="inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[14px]">shield</span> Verified Bank & Ledger Security
                 </span>

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - SafarFlow Tour Management
+| Web Routes - SafarFly Tour Management
 |--------------------------------------------------------------------------
 */
 

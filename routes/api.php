@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Mobile REST API Routes – SafarFlow
+| Mobile REST API Routes – SafarFly
 |--------------------------------------------------------------------------
 */
 
