@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 
 // Root redirect
 Route::get('/', function () {
+    if (Auth::check()) {
+        return Auth::user()->isSuperAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('manager.dashboard');
+    }
     return redirect()->route('login');
 });
 

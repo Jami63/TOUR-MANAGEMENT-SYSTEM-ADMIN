@@ -26,7 +26,7 @@ class ExampleTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/dashboard');
         $response->assertStatus(200);
         $response->assertSee('Super Admin Console');
-        $response->assertSee('User Registrations & Accounts');
+        $response->assertSee('Tour Manager Registrations');
         $response->assertSee('Tour Manager');
         $response->assertSee('Nusrat Jahan');
         $response->assertSee('Tariqul Islam');

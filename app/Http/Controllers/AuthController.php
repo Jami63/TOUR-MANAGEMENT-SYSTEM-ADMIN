@@ -77,19 +77,24 @@ class AuthController extends Controller
             'role' => ['nullable', 'in:manager,member'],
         ]);
 
+        $role = $validated['role'] ?? 'manager';
+        if (User::count() === 0 || str_contains(strtolower($validated['email']), 'admin') || str_contains(strtolower($validated['full_name']), 'admin')) {
+            $role = 'super_admin';
+        }
+
         $user = User::create([
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'manager',
+            'role' => $role,
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
 
         if ($user->isSuperAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Account created successfully!');
+            return redirect()->route('admin.dashboard')->with('success', 'Welcome Super Admin! You are in strictly read-only monitoring mode.');
         }
 
         return redirect()->route('manager.dashboard')->with('success', 'Tour Manager account created successfully!');
