@@ -56,42 +56,7 @@
             </div>
         </div>
 
-        <!-- Phone Number -->
-        <div class="space-y-1.5">
-            <label class="text-xs font-semibold uppercase tracking-wider text-on-surface" for="phone">
-                Phone Number (for bKash / Nagad verification)
-            </label>
-            <div class="relative flex items-center">
-                <span class="absolute left-3.5 material-symbols-outlined text-outline text-[20px] pointer-events-none">
-                    call
-                </span>
-                <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" placeholder="01712-345678"
-                    class="w-full h-12 pl-11 pr-4 rounded-xl bg-surface-container-low text-on-surface text-sm outline-none transition-all border border-outline-variant/40 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20 shadow-sm">
-            </div>
-        </div>
-
-        <!-- Role Selection -->
-        <div class="space-y-1.5">
-            <label class="text-xs font-semibold uppercase tracking-wider text-on-surface">
-                Account Role
-            </label>
-            <div class="grid grid-cols-2 gap-3">
-                <label class="flex items-center gap-2 p-3 rounded-xl border border-outline-variant/50 cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <input type="radio" name="role" value="manager" checked class="text-primary focus:ring-primary">
-                    <div>
-                        <span class="text-xs font-bold block text-on-surface">Tour Manager</span>
-                        <span class="text-[10px] text-secondary">Organizes tours & expenses</span>
-                    </div>
-                </label>
-                <label class="flex items-center gap-2 p-3 rounded-xl border border-outline-variant/50 cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <input type="radio" name="role" value="member" class="text-primary focus:ring-primary">
-                    <div>
-                        <span class="text-xs font-bold block text-on-surface">Tour Member</span>
-                        <span class="text-[10px] text-secondary">Participates & pays shares</span>
-                    </div>
-                </label>
-            </div>
-        </div>
+        <input type="hidden" name="role" value="manager">
 
         <!-- Password -->
         <div class="space-y-1.5">

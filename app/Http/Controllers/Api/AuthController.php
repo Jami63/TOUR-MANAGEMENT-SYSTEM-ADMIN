@@ -20,7 +20,7 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['required', 'in:manager,member'],
+            'role' => ['nullable', 'in:manager,member'],
         ]);
 
         $user = User::create([
@@ -28,7 +28,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
+            'role' => $validated['role'] ?? 'manager',
         ]);
 
         $token = $user->createToken('mobile_app')->plainTextToken;
