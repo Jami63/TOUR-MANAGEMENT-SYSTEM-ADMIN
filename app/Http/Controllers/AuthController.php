@@ -114,9 +114,20 @@ class AuthController extends Controller
             return redirect()->route('register')->with('warning', 'Please submit your registration details first.');
         }
 
+        $pendingOtp = null;
+        if (config('mail.default') === 'log' || app()->environment('local')) {
+            $record = \App\Models\EmailOtpVerification::where('email', strtolower($email))
+                ->whereNull('verified_at')
+                ->where('expires_at', '>', now())
+                ->latest()
+                ->first();
+            $pendingOtp = $record?->otp;
+        }
+
         return view('auth.verify_otp', [
             'email' => $email,
             'fullName' => session('pending_otp_name', 'User'),
+            'debugOtp' => $pendingOtp,
         ]);
     }
 
