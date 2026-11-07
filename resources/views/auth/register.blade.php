@@ -5,10 +5,10 @@
     <!-- Header -->
     <header class="mb-6">
         <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 text-primary">
-            <span class="material-symbols-outlined text-[26px]">person_add</span>
+            <span class="material-symbols-outlined text-[26px]">admin_panel_settings</span>
         </div>
-        <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">Create your account</h2>
-        <p class="text-sm text-secondary mt-1">Start organizing group tours and managing split expenses.</p>
+        <h2 class="font-display text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">Create Admin Account</h2>
+        <p class="text-sm text-secondary mt-1">Register as System Administrator to monitor all tours and managers.</p>
     </header>
 
     @if ($errors->any())
@@ -56,30 +56,7 @@
             </div>
         </div>
 
-        <!-- Role Selection -->
-        <div class="space-y-1.5">
-            <label class="text-xs font-semibold uppercase tracking-wider text-on-surface">
-                Account Type
-            </label>
-            <div class="grid grid-cols-2 gap-3">
-                <label class="relative flex flex-col p-3 rounded-xl border border-outline-variant/50 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary">
-                    <input type="radio" name="role" value="manager" class="sr-only" {{ old('role', 'manager') === 'manager' ? 'checked' : '' }}>
-                    <div class="flex items-center gap-1.5 font-bold text-xs text-on-surface">
-                        <span class="material-symbols-outlined text-primary text-[18px]">badge</span>
-                        Tour Manager
-                    </div>
-                    <span class="text-[11px] text-secondary mt-1">Manage tours, members & expenses</span>
-                </label>
-                <label class="relative flex flex-col p-3 rounded-xl border border-outline-variant/50 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary">
-                    <input type="radio" name="role" value="super_admin" class="sr-only" {{ old('role') === 'super_admin' ? 'checked' : '' }}>
-                    <div class="flex items-center gap-1.5 font-bold text-xs text-on-surface">
-                        <span class="material-symbols-outlined text-primary text-[18px]">shield</span>
-                        System Admin
-                    </div>
-                    <span class="text-[11px] text-secondary mt-1">Monitor all tours & managers</span>
-                </label>
-            </div>
-        </div>
+        <input type="hidden" name="role" value="super_admin">
 
         <!-- Password -->
         <div class="space-y-1.5">
