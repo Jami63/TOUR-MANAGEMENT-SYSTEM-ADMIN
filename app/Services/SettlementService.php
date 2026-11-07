@@ -27,20 +27,16 @@ class SettlementService
         $memberCount = $members->count();
         $totalActualExpenses = (float) $tour->expenses()->sum('total_amount');
 
-        // Sum of all verified payments across all expenses for this tour
-        $totalCollected = (float) Payment::whereHas('share.expense', function ($q) use ($tour) {
-            $q->where('tour_id', $tour->id);
-        })->where('status', 'verified')->sum('amount');
+        // Sum of all verified payments across all expenses and advance payments for this tour
+        $totalCollected = (float) $tour->totalCollectedMoney();
 
         $membersSettlement = [];
         $totalRefundable = 0.00;
         $totalOutstandingDue = 0.00;
 
         foreach ($members as $member) {
-            // Total amount actually paid by this member for all tour expenses
-            $totalPaid = (float) Payment::whereHas('share', function ($q) use ($member) {
-                $q->where('tour_member_id', $member->id);
-            })->where('status', 'verified')->sum('amount');
+            // Total amount actually paid by this member for all tour expenses and advance payments
+            $totalPaid = (float) $member->totalPaidAmount();
 
             // Total equal shares assigned to this member across all tour expenses
             $totalShare = (float) $member->expenseShares()->sum('share_amount');

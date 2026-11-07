@@ -54,13 +54,21 @@ class TourMember extends Model
     }
 
     /**
-     * Total amount actually paid by this member across all tour expense shares.
+     * Total amount actually paid by this member across all tour expense shares and advance payments.
      */
     public function totalPaidAmount(): float
     {
-        return (float) Payment::whereHas('share', function ($q) {
-            $q->where('tour_member_id', $this->id);
+        return (float) Payment::where(function ($q) {
+            $q->where('tour_member_id', $this->id)
+                ->orWhereHas('share', function ($sq) {
+                    $sq->where('tour_member_id', $this->id);
+                });
         })->where('status', 'verified')->sum('amount');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'tour_member_id');
     }
 
     /**

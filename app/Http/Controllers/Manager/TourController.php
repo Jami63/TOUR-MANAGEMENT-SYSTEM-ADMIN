@@ -325,6 +325,8 @@ class TourController extends Controller
             ->firstOrFail();
 
         Payment::create([
+            'tour_id' => $tour->id,
+            'tour_member_id' => $validated['tour_member_id'],
             'share_id' => $share->id,
             'amount' => $validated['amount'],
             'method' => $validated['method'],
@@ -336,12 +338,60 @@ class TourController extends Controller
             'submitted_at' => now(),
         ]);
 
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
         $member = TourMember::find($validated['tour_member_id']);
         $memberName = $member ? $member->display_name : 'Member';
         $newDue = $share->remainingDue();
         $newStatus = $share->paymentStatus();
 
         return back()->with('success', "Payment of ৳{$validated['amount']} via {$validated['method']} recorded for {$memberName}. Status: {$newStatus} (Remaining Due: ৳{$newDue}).");
+    }
+
+    /**
+     * Record Advance / Direct Payment for Tour Member before or independent of expenses.
+     */
+    public function recordAdvancePayment(Request $request, int $tourId): RedirectResponse
+    {
+        $manager = Auth::user();
+        $tour = Tour::where('created_by', $manager->id)->findOrFail($tourId);
+
+        if ($tour->isFinished()) {
+            return back()->with('error', 'Cannot record payments for a finished tour.');
+        }
+
+        $validated = $request->validate([
+            'tour_member_id' => ['required', 'exists:tour_members,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string', 'max:50'],
+            'payment_date' => ['nullable', 'date'],
+            'transaction_id' => ['nullable', 'string', 'max:100'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $member = TourMember::where('tour_id', $tour->id)->findOrFail($validated['tour_member_id']);
+
+        Payment::create([
+            'tour_id' => $tour->id,
+            'tour_member_id' => $member->id,
+            'share_id' => null,
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'payment_date' => $validated['payment_date'] ?? now()->toDateString(),
+            'transaction_id' => $validated['transaction_id'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'verified',
+            'received_by' => $manager->id,
+            'submitted_at' => now(),
+        ]);
+
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
+        return back()->with('success', "Advance payment of ৳{$validated['amount']} via {$validated['method']} recorded for {$member->display_name}.");
     }
 
     /**

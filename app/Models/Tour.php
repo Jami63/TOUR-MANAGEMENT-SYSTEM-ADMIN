@@ -88,6 +88,11 @@ class Tour extends Model
         return $this->hasMany(Refund::class, 'tour_id');
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'tour_id');
+    }
+
     public function isFinished(): bool
     {
         return in_array($this->status, ['completed', 'emergency_finished']);
@@ -105,8 +110,11 @@ class Tour extends Model
 
     public function totalCollectedMoney(): float
     {
-        return (float) Payment::whereHas('share.expense', function ($q) {
-            $q->where('tour_id', $this->id);
+        return (float) Payment::where(function ($q) {
+            $q->where('tour_id', $this->id)
+                ->orWhereHas('share.expense', function ($sq) {
+                    $sq->where('tour_id', $this->id);
+                });
         })->where('status', 'verified')->sum('amount');
     }
 }

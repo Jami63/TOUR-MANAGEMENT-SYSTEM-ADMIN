@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('/tours/{id}/expenses', [ManagerTourController::class, 'addExpense'])->name('tours.expenses.add');
 
     // Manual Payment Management
+    Route::post('/tours/{id}/payments', [ManagerTourController::class, 'recordAdvancePayment'])->name('tours.payments.advance');
     Route::post('/tours/{tourId}/expenses/{expenseId}/payment', [ManagerTourController::class, 'recordPayment'])->name('tours.payments.record');
 
     // Finish Tour & Emergency Finish Tour

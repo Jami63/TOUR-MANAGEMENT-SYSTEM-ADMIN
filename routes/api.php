@@ -46,7 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tours/{tourId}/expenses', [ExpenseController::class, 'index']);
     Route::post('/tours/{tourId}/expenses', [ExpenseController::class, 'store']);
 
-    // Manual Payment API (Tour Manager logs payments directly per expense - Requirement 4)
+    // Manual Payment API (Tour Manager logs payments directly per expense or advance - Requirement 4)
+    Route::post('/tours/{tourId}/payments', [PaymentController::class, 'recordTourPayment']);
+    Route::get('/tours/{tourId}/payments', [PaymentController::class, 'getTourPayments']);
     Route::post('/tours/{tourId}/expenses/{expenseId}/payment', [PaymentController::class, 'recordManualPayment']);
 
     // Payments API (Screens 23, 37, 38 & 39)

@@ -12,6 +12,8 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
+        'tour_id',
+        'tour_member_id',
         'share_id',
         'amount',
         'method',
@@ -31,6 +33,16 @@ class Payment extends Model
             'payment_date' => 'date',
             'submitted_at' => 'datetime',
         ];
+    }
+
+    public function tour(): BelongsTo
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
+
+    public function tourMember(): BelongsTo
+    {
+        return $this->belongsTo(TourMember::class, 'tour_member_id');
     }
 
     public function share(): BelongsTo

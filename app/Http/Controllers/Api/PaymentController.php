@@ -273,6 +273,8 @@ class PaymentController extends Controller
         );
 
         $payment = Payment::create([
+            'tour_id' => $tourId,
+            'tour_member_id' => $validated['tour_member_id'],
             'share_id' => $share->id,
             'amount' => $validated['amount'],
             'method' => $validated['method'],
@@ -303,5 +305,135 @@ class PaymentController extends Controller
             ],
             'tour_total_collected' => (float) $tour->total_collected,
         ], 201);
+    }
+
+    /**
+     * Tour Manager records payment/advance money from a member before or independent of expenses.
+     */
+    public function recordTourPayment(Request $request, int $tourId): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+            return response()->json(['success' => false, 'message' => 'Only the Tour Manager can record payments'], 403);
+        }
+
+        $validated = $request->validate([
+            'tour_member_id' => ['required', 'exists:tour_members,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string', 'max:50'],
+            'transaction_id' => ['nullable', 'string', 'max:100'],
+            'payment_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $member = \App\Models\TourMember::where('tour_id', $tourId)->find($validated['tour_member_id']);
+        if (! $member) {
+            return response()->json(['success' => false, 'message' => 'Member does not belong to this tour'], 422);
+        }
+
+        $payment = Payment::create([
+            'tour_id' => $tour->id,
+            'tour_member_id' => $member->id,
+            'share_id' => null,
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'payment_date' => $validated['payment_date'] ?? now()->toDateString(),
+            'transaction_id' => $validated['transaction_id'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'verified',
+            'received_by' => $currentUser->id,
+            'submitted_at' => now(),
+        ]);
+
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
+        // Timeline event
+        TourTimeline::create([
+            'tour_id' => $tour->id,
+            'event_type' => 'advance_payment_recorded',
+            'description' => "Payment of ৳{$payment->amount} recorded for {$member->display_name} by {$currentUser->full_name}",
+            'created_by' => $currentUser->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment recorded successfully',
+            'payment' => [
+                'id' => $payment->id,
+                'tour_id' => $payment->tour_id,
+                'tour_member_id' => $payment->tour_member_id,
+                'member_name' => $member->display_name,
+                'amount' => (float) $payment->amount,
+                'method' => $payment->method,
+                'payment_date' => $payment->payment_date?->toDateString(),
+                'transaction_id' => $payment->transaction_id,
+                'notes' => $payment->notes,
+                'status' => $payment->status,
+                'submitted_at' => $payment->submitted_at?->format('d M, Y h:i A'),
+            ],
+            'tour_total_collected' => (float) $tour->totalCollectedMoney(),
+            'member_total_paid' => (float) $member->totalPaidAmount(),
+            'member_net_balance' => (float) $member->netBalance(),
+        ], 201);
+    }
+
+    /**
+     * List all recorded payments for a tour (both advance collections and expense payments)
+     */
+    public function getTourPayments(Request $request, int $tourId): JsonResponse
+    {
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        $payments = Payment::with(['tourMember', 'share.expense', 'receivedBy'])
+            ->where(function ($q) use ($tourId) {
+                $q->where('tour_id', $tourId)
+                    ->orWhereHas('share.expense', function ($sq) use ($tourId) {
+                        $sq->where('tour_id', $tourId);
+                    });
+            })
+            ->latest('created_at')
+            ->get();
+
+        $data = $payments->map(function ($p) {
+            $memberName = $p->tourMember?->display_name
+                ?? $p->share?->tourMember?->display_name
+                ?? 'Member';
+
+            $expenseName = $p->share?->expense?->expense_name;
+
+            return [
+                'id' => $p->id,
+                'tour_id' => $p->tour_id ?? $p->share?->expense?->tour_id,
+                'tour_member_id' => $p->tour_member_id ?? $p->share?->tour_member_id,
+                'member_name' => $memberName,
+                'expense_name' => $expenseName,
+                'is_advance' => $p->share_id === null,
+                'amount' => (float) $p->amount,
+                'method' => $p->method,
+                'payment_date' => $p->payment_date?->toDateString(),
+                'transaction_id' => $p->transaction_id,
+                'notes' => $p->notes,
+                'status' => $p->status,
+                'received_by_name' => $p->receivedBy?->full_name,
+                'submitted_at' => $p->submitted_at?->format('d M, Y h:i A') ?? $p->created_at?->format('d M, Y h:i A'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'total_collected' => (float) $tour->totalCollectedMoney(),
+            'payments' => $data,
+        ]);
     }
 }
