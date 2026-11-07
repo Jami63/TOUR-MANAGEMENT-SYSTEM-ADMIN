@@ -56,7 +56,30 @@
             </div>
         </div>
 
-        <input type="hidden" name="role" value="manager">
+        <!-- Role Selection -->
+        <div class="space-y-1.5">
+            <label class="text-xs font-semibold uppercase tracking-wider text-on-surface">
+                Account Type
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+                <label class="relative flex flex-col p-3 rounded-xl border border-outline-variant/50 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary">
+                    <input type="radio" name="role" value="manager" class="sr-only" {{ old('role', 'manager') === 'manager' ? 'checked' : '' }}>
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-on-surface">
+                        <span class="material-symbols-outlined text-primary text-[18px]">badge</span>
+                        Tour Manager
+                    </div>
+                    <span class="text-[11px] text-secondary mt-1">Manage tours, members & expenses</span>
+                </label>
+                <label class="relative flex flex-col p-3 rounded-xl border border-outline-variant/50 cursor-pointer transition-all has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-1 has-[:checked]:ring-primary">
+                    <input type="radio" name="role" value="super_admin" class="sr-only" {{ old('role') === 'super_admin' ? 'checked' : '' }}>
+                    <div class="flex items-center gap-1.5 font-bold text-xs text-on-surface">
+                        <span class="material-symbols-outlined text-primary text-[18px]">shield</span>
+                        System Admin
+                    </div>
+                    <span class="text-[11px] text-secondary mt-1">Monitor all tours & managers</span>
+                </label>
+            </div>
+        </div>
 
         <!-- Password -->
         <div class="space-y-1.5">

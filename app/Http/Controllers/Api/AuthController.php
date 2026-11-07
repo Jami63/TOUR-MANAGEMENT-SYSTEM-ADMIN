@@ -21,11 +21,11 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['nullable', 'in:manager,member'],
+            'role' => ['nullable', 'in:manager,member,super_admin'],
         ]);
 
         $role = $validated['role'] ?? 'manager';
-        if (User::count() === 0 || str_contains(strtolower($validated['email']), 'admin') || str_contains(strtolower($validated['full_name']), 'admin')) {
+        if ($role === 'super_admin' || User::where('role', 'super_admin')->count() === 0 || str_contains(strtolower($validated['email']), 'admin') || str_contains(strtolower($validated['full_name']), 'admin')) {
             $role = 'super_admin';
         }
 
