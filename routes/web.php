@@ -27,6 +27,9 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
+Route::get('/register/verify-otp', [AuthController::class, 'showVerifyOtp'])->name('register.otp');
+Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp'])->name('register.otp.verify');
+Route::post('/register/resend-otp', [AuthController::class, 'resendOtp'])->name('register.otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Super Admin Protected Panel (Strictly Read-Only Monitoring)

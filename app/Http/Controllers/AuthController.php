@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,13 +66,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Process registration submission.
+     * Process registration submission - Step 1: Validate & send OTP to Gmail.
      */
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, OtpService $otpService): RedirectResponse
     {
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'role' => ['nullable', 'in:manager,member'],
@@ -82,22 +83,108 @@ class AuthController extends Controller
             $role = 'super_admin';
         }
 
-        $user = User::create([
+        $res = $otpService->generateAndSendOtp($validated['email'], [
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-            'password' => Hash::make($validated['password']),
+            'password_hash' => Hash::make($validated['password']),
             'role' => $role,
+        ]);
+
+        session([
+            'pending_otp_email' => $validated['email'],
+            'pending_otp_name' => $validated['full_name'],
+        ]);
+
+        $msg = 'A 6-digit verification code has been sent to ' . $validated['email'] . '. Please enter it below to activate your account.';
+        if (! empty($res['debug_otp'])) {
+            $msg .= ' (Dev Code: ' . $res['debug_otp'] . ')';
+        }
+
+        return redirect()->route('register.otp')->with('success', $msg);
+    }
+
+    /**
+     * Show OTP Verification screen.
+     */
+    public function showVerifyOtp(Request $request): View|RedirectResponse
+    {
+        $email = session('pending_otp_email');
+        if (! $email) {
+            return redirect()->route('register')->with('warning', 'Please submit your registration details first.');
+        }
+
+        return view('auth.verify_otp', [
+            'email' => $email,
+            'fullName' => session('pending_otp_name', 'User'),
+        ]);
+    }
+
+    /**
+     * Process OTP verification - Step 2: Validate code & activate account.
+     */
+    public function verifyOtp(Request $request, OtpService $otpService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        $payload = $otpService->verifyOtp($validated['email'], $validated['otp']);
+
+        if (! $payload) {
+            return back()->withErrors(['otp' => 'Invalid or expired 6-digit verification code. Please check your Gmail or request a new code.'])->withInput();
+        }
+
+        $existing = User::where('email', $payload['email'])->first();
+        if ($existing) {
+            Auth::login($existing);
+            session()->forget(['pending_otp_email', 'pending_otp_name']);
+            return redirect()->route($existing->isSuperAdmin() ? 'admin.dashboard' : 'manager.dashboard')->with('success', 'Account verified! Welcome back.');
+        }
+
+        $user = User::create([
+            'full_name' => $payload['full_name'],
+            'email' => $payload['email'],
+            'phone' => $payload['phone'] ?? null,
+            'password' => $payload['password_hash'],
+            'role' => $payload['role'] ?? 'manager',
+            'email_verified_at' => now(),
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
+        session()->forget(['pending_otp_email', 'pending_otp_name']);
 
         if ($user->isSuperAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', 'Welcome Super Admin! You are in strictly read-only monitoring mode.');
+            return redirect()->route('admin.dashboard')->with('success', 'Super Admin account verified & created successfully!');
         }
 
-        return redirect()->route('manager.dashboard')->with('success', 'Tour Manager account created successfully!');
+        return redirect()->route('manager.dashboard')->with('success', 'Tour Manager account verified & created successfully!');
+    }
+
+    /**
+     * Resend fresh OTP.
+     */
+    public function resendOtp(Request $request, OtpService $otpService): RedirectResponse
+    {
+        $email = $request->input('email') ?? session('pending_otp_email');
+        if (! $email) {
+            return redirect()->route('register')->with('error', 'Session expired. Please register again.');
+        }
+
+        $res = $otpService->resendOtp($email);
+
+        if (! $res['success']) {
+            return back()->with('error', $res['message']);
+        }
+
+        $msg = 'A new 6-digit code was sent to ' . $email;
+        if (! empty($res['debug_otp'])) {
+            $msg .= ' (Dev Code: ' . $res['debug_otp'] . ')';
+        }
+
+        return back()->with('success', $msg);
     }
 
     /**
