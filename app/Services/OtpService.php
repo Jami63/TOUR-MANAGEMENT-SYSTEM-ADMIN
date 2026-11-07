@@ -34,6 +34,24 @@ class OtpService
 
         $fullName = $payload['full_name'] ?? 'User';
 
+        if (config('mail.default') === 'log') {
+            $record->delete();
+            return [
+                'success' => false,
+                'message' => 'Real email delivery is disabled because MAIL_MAILER is set to "log" in .env. Please configure Gmail SMTP in .env to deliver real OTP emails.',
+                'email' => $normalizedEmail,
+            ];
+        }
+
+        if (config('mail.default') === 'smtp' && (empty(config('mail.mailers.smtp.username')) || empty(config('mail.mailers.smtp.password')))) {
+            $record->delete();
+            return [
+                'success' => false,
+                'message' => 'Gmail SMTP credentials are not configured in your .env file (MAIL_USERNAME and MAIL_PASSWORD are missing). Please add your Gmail address and 16-character App Password.',
+                'email' => $normalizedEmail,
+            ];
+        }
+
         try {
             Mail::to($normalizedEmail)->send(new OtpVerificationMail($otp, $fullName));
             Log::info("SafarFly OTP successfully dispatched to {$normalizedEmail}");
