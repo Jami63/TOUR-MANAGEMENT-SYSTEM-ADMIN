@@ -91,17 +91,16 @@ class AuthController extends Controller
             'role' => $role,
         ]);
 
+        if (! $res['success']) {
+            return back()->withErrors(['email' => $res['message']])->withInput();
+        }
+
         session([
             'pending_otp_email' => $validated['email'],
             'pending_otp_name' => $validated['full_name'],
         ]);
 
-        $msg = 'A 6-digit verification code has been sent to ' . $validated['email'] . '. Please enter it below to activate your account.';
-        if (! empty($res['debug_otp'])) {
-            $msg .= ' (Dev Code: ' . $res['debug_otp'] . ')';
-        }
-
-        return redirect()->route('register.otp')->with('success', $msg);
+        return redirect()->route('register.otp')->with('success', 'A 6-digit verification code has been sent to ' . $validated['email'] . '. Please enter it below to activate your account.');
     }
 
     /**
@@ -114,20 +113,9 @@ class AuthController extends Controller
             return redirect()->route('register')->with('warning', 'Please submit your registration details first.');
         }
 
-        $pendingOtp = null;
-        if (config('mail.default') === 'log' || app()->environment('local')) {
-            $record = \App\Models\EmailOtpVerification::where('email', strtolower($email))
-                ->whereNull('verified_at')
-                ->where('expires_at', '>', now())
-                ->latest()
-                ->first();
-            $pendingOtp = $record?->otp;
-        }
-
         return view('auth.verify_otp', [
             'email' => $email,
             'fullName' => session('pending_otp_name', 'User'),
-            'debugOtp' => $pendingOtp,
         ]);
     }
 
@@ -190,12 +178,7 @@ class AuthController extends Controller
             return back()->with('error', $res['message']);
         }
 
-        $msg = 'A new 6-digit code was sent to ' . $email;
-        if (! empty($res['debug_otp'])) {
-            $msg .= ' (Dev Code: ' . $res['debug_otp'] . ')';
-        }
-
-        return back()->with('success', $msg);
+        return back()->with('success', 'A new 6-digit verification code was sent to ' . $email . '. Please check your inbox.');
     }
 
     /**

@@ -17,23 +17,6 @@
         </p>
     </div>
 
-    <!-- Dev OTP Helper Card (When using local log mailer) -->
-    @if (! empty($debugOtp))
-        <div class="mb-5 p-4 rounded-xl bg-teal-50 border border-teal-200 text-teal-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-            <div class="flex items-center gap-2.5">
-                <span class="material-symbols-outlined text-teal-700 text-[22px]">developer_mode</span>
-                <div>
-                    <p class="text-[11px] font-bold text-teal-800 uppercase tracking-wider">Local Testing Mode (Log Mailer)</p>
-                    <p class="text-xs text-teal-900 mt-0.5">Your verification code is: <strong class="font-mono text-sm font-extrabold text-teal-950 tracking-wider">{{ $debugOtp }}</strong></p>
-                </div>
-            </div>
-            <button type="button" onclick="document.getElementById('otp').value='{{ $debugOtp }}'; document.getElementById('otp').focus();"
-                class="px-3.5 py-1.5 bg-[#008373] text-white text-xs font-bold rounded-lg hover:bg-[#00685b] transition-all shadow-sm shrink-0 cursor-pointer">
-                Auto-fill Code
-            </button>
-        </div>
-    @endif
-
     <!-- Success Message -->
     @if (session('success'))
         <div class="mb-5 p-3.5 rounded-xl bg-teal-50 text-teal-900 flex items-start gap-2.5 text-xs sm:text-sm border border-teal-200">

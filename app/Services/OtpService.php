@@ -33,26 +33,27 @@ class OtpService
         ]);
 
         $fullName = $payload['full_name'] ?? 'User';
-        $mailSent = false;
-        $mailError = null;
 
         try {
             Mail::to($normalizedEmail)->send(new OtpVerificationMail($otp, $fullName));
-            $mailSent = true;
-            Log::info("SafarFly OTP successfully sent to {$normalizedEmail}: {$otp}");
+            Log::info("SafarFly OTP successfully dispatched to {$normalizedEmail}");
         } catch (\Throwable $e) {
-            $mailError = $e->getMessage();
-            Log::warning("SafarFly Mail delivery notice for {$normalizedEmail}: {$mailError}. OTP was: {$otp}");
+            // Delete the unverified OTP record so an unsent OTP cannot be verified
+            $record->delete();
+            Log::error("SMTP Delivery Failed for {$normalizedEmail}: " . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Unable to send verification email: ' . $e->getMessage() . '. Please verify your SMTP email configuration in .env.',
+                'email' => $normalizedEmail,
+            ];
         }
 
         return [
             'success' => true,
-            'message' => 'A 6-digit verification code has been sent to your email address.',
+            'message' => 'A 6-digit verification code has been sent to ' . $normalizedEmail . '. Please check your inbox.',
             'email' => $normalizedEmail,
             'expires_in_minutes' => 10,
-            'mail_sent' => $mailSent,
-            // In local/test environment, provide debug OTP so development is never blocked
-            'debug_otp' => app()->environment('local', 'testing') ? $otp : null,
         ];
     }
 
@@ -106,9 +107,9 @@ class OtpService
             ];
         }
 
-        // 30 seconds cooldown check
-        if ($record->created_at->diffInSeconds(now()) < 30) {
-            $remaining = 30 - $record->created_at->diffInSeconds(now());
+        // 60 seconds cooldown check
+        if ($record->created_at->diffInSeconds(now()) < 60) {
+            $remaining = 60 - $record->created_at->diffInSeconds(now());
             return [
                 'success' => false,
                 'message' => "Please wait {$remaining} seconds before requesting a new code.",

@@ -37,13 +37,18 @@ class AuthController extends Controller
             'role' => $role,
         ]);
 
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 422);
+        }
+
         return response()->json([
             'success' => true,
             'requires_otp' => true,
-            'message' => 'A 6-digit verification code has been sent to your email address.',
+            'message' => 'A 6-digit verification code has been sent to ' . $validated['email'] . '. Please check your inbox.',
             'email' => $validated['email'],
-            'mail_sent' => $result['mail_sent'] ?? false,
-            'debug_otp' => $result['debug_otp'] ?? null,
         ], 200);
     }
 
