@@ -436,4 +436,142 @@ class PaymentController extends Controller
             'payments' => $data,
         ]);
     }
+
+    /**
+     * Update an existing payment (Tour Manager)
+     */
+    public function updateTourPayment(Request $request, int $tourId, int $paymentId): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+            return response()->json(['success' => false, 'message' => 'Only the Tour Manager can edit payments'], 403);
+        }
+
+        $payment = Payment::where(function ($q) use ($tourId) {
+            $q->where('tour_id', $tourId)
+                ->orWhereHas('share.expense', fn ($sq) => $sq->where('tour_id', $tourId));
+        })->find($paymentId);
+
+        if (! $payment) {
+            return response()->json(['success' => false, 'message' => 'Payment not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'tour_member_id' => ['nullable', 'exists:tour_members,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'string', 'max:50'],
+            'transaction_id' => ['nullable', 'string', 'max:100'],
+            'payment_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $oldAmount = $payment->amount;
+
+        $updateData = [
+            'amount' => $validated['amount'],
+            'method' => $validated['method'],
+            'payment_date' => $validated['payment_date'] ?? $payment->payment_date,
+            'transaction_id' => $validated['transaction_id'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ];
+
+        if (! empty($validated['tour_member_id'])) {
+            $updateData['tour_member_id'] = $validated['tour_member_id'];
+        }
+
+        $payment->update($updateData);
+
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
+        // Timeline event
+        TourTimeline::create([
+            'tour_id' => $tour->id,
+            'event_type' => 'payment_updated',
+            'description' => "Payment #{$payment->id} modified from ৳{$oldAmount} to ৳{$payment->amount} by {$currentUser->full_name}",
+            'created_by' => $currentUser->id,
+        ]);
+
+        $member = $payment->tourMember ?? ($payment->share ? $payment->share->tourMember : null);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment updated successfully',
+            'payment' => [
+                'id' => $payment->id,
+                'tour_id' => $tour->id,
+                'tour_member_id' => $payment->tour_member_id,
+                'member_name' => $member ? $member->display_name : 'Member',
+                'amount' => (float) $payment->amount,
+                'method' => $payment->method,
+                'payment_date' => $payment->payment_date?->toDateString(),
+                'transaction_id' => $payment->transaction_id,
+                'notes' => $payment->notes,
+                'status' => $payment->status,
+            ],
+            'tour_total_collected' => (float) $tour->totalCollectedMoney(),
+            'member_total_paid' => $member ? (float) $member->totalPaidAmount() : 0.0,
+            'member_net_balance' => $member ? (float) $member->netBalance() : 0.0,
+        ]);
+    }
+
+    /**
+     * Delete an existing payment (Tour Manager)
+     */
+    public function deleteTourPayment(Request $request, int $tourId, int $paymentId): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+            return response()->json(['success' => false, 'message' => 'Only the Tour Manager can delete payments'], 403);
+        }
+
+        $payment = Payment::where(function ($q) use ($tourId) {
+            $q->where('tour_id', $tourId)
+                ->orWhereHas('share.expense', fn ($sq) => $sq->where('tour_id', $tourId));
+        })->find($paymentId);
+
+        if (! $payment) {
+            return response()->json(['success' => false, 'message' => 'Payment not found'], 404);
+        }
+
+        $amount = $payment->amount;
+        $memberName = $payment->tourMember?->display_name
+            ?? $payment->share?->tourMember?->display_name
+            ?? 'Member';
+
+        // Delete verification record if exists
+        PaymentVerification::where('payment_id', $payment->id)->delete();
+        $payment->delete();
+
+        $tour->update([
+            'total_collected' => $tour->totalCollectedMoney(),
+        ]);
+
+        // Timeline event
+        TourTimeline::create([
+            'tour_id' => $tour->id,
+            'event_type' => 'payment_deleted',
+            'description' => "Payment of ৳{$amount} for {$memberName} was deleted by {$currentUser->full_name}",
+            'created_by' => $currentUser->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment deleted successfully',
+            'tour_total_collected' => (float) $tour->totalCollectedMoney(),
+        ]);
+    }
 }
