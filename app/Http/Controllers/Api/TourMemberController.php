@@ -31,13 +31,13 @@ class TourMemberController extends Controller
         $participants = $members->map(function ($member) {
             $totalShare = (float) $member->expenseShares->sum('share_amount');
 
-            $totalPaid = 0.0;
-            $totalPending = 0.0;
+            // Total amount actually paid across all expense shares and advance payments
+            $totalPaid = (float) $member->totalPaidAmount();
 
-            foreach ($member->expenseShares as $share) {
-                $totalPaid += (float) $share->payments->where('status', 'verified')->sum('amount');
-                $totalPending += (float) $share->payments->where('status', 'pending')->sum('amount');
-            }
+            $totalPending = (float) \App\Models\Payment::where(function ($q) use ($member) {
+                $q->where('tour_member_id', $member->id)
+                    ->orWhereHas('share', fn ($sq) => $sq->where('tour_member_id', $member->id));
+            })->where('status', 'pending')->sum('amount');
 
             $remainingDue = max(0.0, round($totalShare - $totalPaid, 2));
             $netBalance = round($totalPaid - $totalShare, 2);
@@ -48,10 +48,12 @@ class TourMemberController extends Controller
             $settlementStatus = 'Due';
             if ($totalShare > 0 && $remainingDue <= 0.001) {
                 $settlementStatus = 'Settled';
-            } elseif ($totalPaid > 0) {
+            } elseif ($totalPaid > 0 && $totalShare > 0) {
                 $settlementStatus = 'Partial';
+            } elseif ($totalPaid > 0 && $totalShare == 0) {
+                $settlementStatus = 'Advance Paid';
             } elseif ($totalShare == 0) {
-                $settlementStatus = 'No Expenses';
+                $settlementStatus = 'Joined';
             }
 
             return [
