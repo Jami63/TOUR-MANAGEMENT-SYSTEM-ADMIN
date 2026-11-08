@@ -119,11 +119,6 @@ class Tour extends Model
                     $this->update(['status' => 'ongoing']);
                     $this->status = 'ongoing';
                 }
-            } elseif ($today->lt($start)) {
-                if ($this->status !== 'upcoming') {
-                    $this->update(['status' => 'upcoming']);
-                    $this->status = 'upcoming';
-                }
             }
         }
     }

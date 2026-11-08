@@ -262,6 +262,37 @@ class PaymentController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $expense = \App\Models\Expense::where('tour_id', $tourId)->find($expenseId);
+        if (! $expense) {
+            return response()->json(['success' => false, 'message' => 'Expense not found'], 404);
+        }
+
+        // Budget check on expense
+        $alreadyCollected = (float) Payment::whereHas('share', function ($q) use ($expenseId) {
+            $q->where('expense_id', $expenseId);
+        })->where('status', 'verified')->sum('amount');
+
+        $expenseTotal = (float) $expense->total_amount;
+        $remainingExpense = max(0.0, $expenseTotal - $alreadyCollected);
+
+        if ($validated['amount'] > ($remainingExpense + 0.01)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Emergency Stop: Cannot collect more than the expense budget. Expense bill is ৳'.number_format($expenseTotal, 2).' and ৳'.number_format($alreadyCollected, 2).' has already been collected (Remaining limit: ৳'.number_format($remainingExpense, 2).').',
+            ], 422);
+        }
+
+        // Budget check on tour
+        $tourBudget = (float) $tour->estimated_budget;
+        $tourCollected = (float) $tour->totalCollectedMoney();
+        if ($tourBudget > 0 && ($tourCollected + $validated['amount']) > ($tourBudget + 0.01)) {
+            $remainingTourBudget = max(0.0, $tourBudget - $tourCollected);
+            return response()->json([
+                'success' => false,
+                'message' => 'Emergency Stop: Total collected cannot exceed tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
+            ], 422);
+        }
+
         $share = ExpenseShare::firstOrCreate(
             [
                 'expense_id' => $expenseId,
@@ -335,6 +366,17 @@ class PaymentController extends Controller
         $member = \App\Models\TourMember::where('tour_id', $tourId)->find($validated['tour_member_id']);
         if (! $member) {
             return response()->json(['success' => false, 'message' => 'Member does not belong to this tour'], 422);
+        }
+
+        // Budget check on tour
+        $tourBudget = (float) $tour->estimated_budget;
+        $tourCollected = (float) $tour->totalCollectedMoney();
+        if ($tourBudget > 0 && ($tourCollected + $validated['amount']) > ($tourBudget + 0.01)) {
+            $remainingTourBudget = max(0.0, $tourBudget - $tourCollected);
+            return response()->json([
+                'success' => false,
+                'message' => 'Emergency Stop: Cannot collect more than the tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
+            ], 422);
         }
 
         $payment = Payment::create([
@@ -417,6 +459,7 @@ class PaymentController extends Controller
                 'tour_id' => $p->tour_id ?? $p->share?->expense?->tour_id,
                 'tour_member_id' => $p->tour_member_id ?? $p->share?->tour_member_id,
                 'member_name' => $memberName,
+                'expense_id' => $p->share?->expense_id,
                 'expense_name' => $expenseName,
                 'is_advance' => $p->share_id === null,
                 'amount' => (float) $p->amount,
@@ -472,6 +515,18 @@ class PaymentController extends Controller
         ]);
 
         $oldAmount = $payment->amount;
+
+        // Budget check on tour
+        $tourBudget = (float) $tour->estimated_budget;
+        $tourCollected = (float) $tour->totalCollectedMoney();
+        $projectedCollected = ($tourCollected - (float) $payment->amount) + $validated['amount'];
+        if ($tourBudget > 0 && $projectedCollected > ($tourBudget + 0.01)) {
+            $remainingTourBudget = max(0.0, $tourBudget - ($tourCollected - (float) $payment->amount));
+            return response()->json([
+                'success' => false,
+                'message' => 'Emergency Stop: Cannot update payment to exceed tour budget (৳'.number_format($tourBudget, 2).'). Remaining allowance: ৳'.number_format($remainingTourBudget, 2).'.',
+            ], 422);
+        }
 
         $updateData = [
             'amount' => $validated['amount'],

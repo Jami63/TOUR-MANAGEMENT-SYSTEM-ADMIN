@@ -23,9 +23,24 @@ class ExpenseController extends Controller
             ->latest('expense_date')
             ->get();
 
+        $expensesData = $expenses->map(function ($e) {
+            $totalAmount = (float) $e->total_amount;
+            $collected = (float) \App\Models\Payment::whereHas('share', function ($q) use ($e) {
+                $q->where('expense_id', $e->id);
+            })->where('status', 'verified')->sum('amount');
+            $remaining = max(0.0, $totalAmount - $collected);
+            $isCompleted = ($totalAmount > 0 && $collected >= ($totalAmount - 0.01));
+
+            $arr = $e->toArray();
+            $arr['total_collected'] = $collected;
+            $arr['remaining_amount'] = $remaining;
+            $arr['is_completed'] = $isCompleted;
+            return $arr;
+        });
+
         return response()->json([
             'success' => true,
-            'expenses' => $expenses,
+            'expenses' => $expensesData,
         ]);
     }
 
