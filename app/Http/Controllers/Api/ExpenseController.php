@@ -44,7 +44,7 @@ class ExpenseController extends Controller
         $validated = $request->validate([
             'expense_name' => ['required', 'string', 'max:255'],
             'total_amount' => ['required', 'numeric', 'min:1'],
-            'expense_date' => ['required', 'date'],
+            'expense_date' => ['nullable', 'date'],
             'category_name' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
             'receipt_file' => ['nullable', 'image', 'max:5120'], // 5MB max
@@ -72,7 +72,7 @@ class ExpenseController extends Controller
             'added_by' => $user->id,
             'expense_name' => $validated['expense_name'],
             'total_amount' => $validated['total_amount'],
-            'expense_date' => $validated['expense_date'],
+            'expense_date' => $validated['expense_date'] ?? now()->toDateString(),
             'description' => $validated['description'] ?? null,
             'receipt_file' => $receiptPath,
         ]);
