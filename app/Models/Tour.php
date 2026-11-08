@@ -103,6 +103,31 @@ class Tour extends Model
         return $this->finish_type === 'emergency' || $this->status === 'emergency_finished';
     }
 
+    public function syncDynamicStatus(): void
+    {
+        if ($this->isFinished() || in_array($this->status, ['cancelled', 'completed', 'emergency_finished'])) {
+            return;
+        }
+
+        $today = now()->startOfDay();
+        $start = $this->start_date ? $this->start_date->startOfDay() : null;
+        $end = $this->end_date ? $this->end_date->endOfDay() : null;
+
+        if ($start && $end) {
+            if ($today->betweenIncluded($start, $end)) {
+                if ($this->status !== 'ongoing') {
+                    $this->update(['status' => 'ongoing']);
+                    $this->status = 'ongoing';
+                }
+            } elseif ($today->lt($start)) {
+                if ($this->status !== 'upcoming') {
+                    $this->update(['status' => 'upcoming']);
+                    $this->status = 'upcoming';
+                }
+            }
+        }
+    }
+
     public function totalActualExpenses(): float
     {
         return (float) $this->expenses()->sum('total_amount');

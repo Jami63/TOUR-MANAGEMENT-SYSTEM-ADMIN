@@ -35,6 +35,10 @@ class TourController extends Controller
                 ->get();
         }
 
+        foreach ($tours as $tour) {
+            $tour->syncDynamicStatus();
+        }
+
         return response()->json([
             'success' => true,
             'tours' => $tours,
@@ -57,11 +61,18 @@ class TourController extends Controller
             'start_location' => ['required', 'string', 'max:255'],
             'destinations' => ['required', 'array', 'min:1'],
             'destinations.*' => ['string'],
-            'start_date' => ['required', 'date'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'estimated_budget' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string'],
+        ], [
+            'start_date.after_or_equal' => 'Tour start date cannot be in the past. Please choose today or a future date.',
+            'end_date.after_or_equal' => 'Tour end date must be on or after the start date.',
         ]);
+
+        $today = now()->startOfDay();
+        $startDate = \Carbon\Carbon::parse($validated['start_date'])->startOfDay();
+        $initialStatus = $startDate->equalTo($today) ? 'ongoing' : 'upcoming';
 
         $tour = Tour::create([
             'created_by' => $user->id,
@@ -71,7 +82,7 @@ class TourController extends Controller
             'end_date' => $validated['end_date'],
             'estimated_budget' => $validated['estimated_budget'],
             'description' => $validated['description'] ?? null,
-            'status' => 'upcoming',
+            'status' => $initialStatus,
         ]);
 
         // Add destinations
@@ -108,6 +119,89 @@ class TourController extends Controller
     }
 
     /**
+     * Update an existing tour (Tour Manager)
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->with('destinations')->find($id);
+
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        if ($tour->isFinished()) {
+            return response()->json(['success' => false, 'message' => 'Cannot modify a finished tour'], 422);
+        }
+
+        $validated = $request->validate([
+            'tour_name' => ['required', 'string', 'max:255'],
+            'start_location' => ['required', 'string', 'max:255'],
+            'destinations' => ['required', 'array', 'min:1'],
+            'destinations.*' => ['string'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'estimated_budget' => ['required', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string'],
+        ], [
+            'end_date.after_or_equal' => 'Tour end date must be on or after the start date.',
+        ]);
+
+        $tour->update([
+            'tour_name' => $validated['tour_name'],
+            'start_location' => $validated['start_location'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'estimated_budget' => $validated['estimated_budget'],
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        // Re-sync destinations
+        TourDestination::where('tour_id', $tour->id)->delete();
+        foreach ($validated['destinations'] as $order => $destName) {
+            TourDestination::create([
+                'tour_id' => $tour->id,
+                'destination_name' => trim($destName),
+                'visit_order' => $order + 1,
+            ]);
+        }
+
+        $tour->syncDynamicStatus();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tour updated successfully',
+            'tour' => $tour->fresh(['destinations', 'members.user']),
+        ]);
+    }
+
+    /**
+     * Delete a tour (Tour Manager)
+     */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->find($id);
+
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($tour) {
+            TourDestination::where('tour_id', $tour->id)->delete();
+            TourMember::where('tour_id', $tour->id)->delete();
+            Refund::where('tour_id', $tour->id)->delete();
+            TourTimeline::where('tour_id', $tour->id)->delete();
+            $tour->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tour deleted successfully',
+        ]);
+    }
+
+    /**
      * Get specific tour details
      */
     public function show(int $id): JsonResponse
@@ -118,6 +212,8 @@ class TourController extends Controller
         if (! $tour) {
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
+
+        $tour->syncDynamicStatus();
 
         $totalSpent = $tour->expenses->sum('total_amount');
 
