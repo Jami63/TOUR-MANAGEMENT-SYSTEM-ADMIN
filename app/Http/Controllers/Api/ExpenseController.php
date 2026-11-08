@@ -65,6 +65,19 @@ class ExpenseController extends Controller
             'receipt_file' => ['nullable', 'image', 'max:5120'], // 5MB max
         ]);
 
+        // Budget check: expense cannot exceed the tour budget
+        $budget = (float) $tour->estimated_budget;
+        $currentExpenses = (float) Expense::where('tour_id', $tourId)->sum('total_amount');
+        $newTotal = $currentExpenses + (float) $validated['total_amount'];
+
+        if ($budget > 0 && $newTotal > ($budget + 0.01)) {
+            $remainingBudget = max(0.0, $budget - $currentExpenses);
+            return response()->json([
+                'success' => false,
+                'message' => 'Budget limit exceeded! Tour budget is ৳'.number_format($budget, 2).', already spent ৳'.number_format($currentExpenses, 2).' (Remaining budget: ৳'.number_format($remainingBudget, 2).'). You cannot add an expense of ৳'.number_format($validated['total_amount'], 2).'. Saving blocked.',
+            ], 422);
+        }
+
         // Category
         $categoryId = null;
         if (! empty($validated['category_name'])) {
