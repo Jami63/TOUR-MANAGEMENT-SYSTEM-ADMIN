@@ -44,8 +44,8 @@ class DashboardController extends Controller
 
         // 3. User Accounts Table
         $query = User::where('role', '!=', 'super_admin')
-            ->withCount('tours')
-            ->select(['id', 'full_name', 'email', 'phone', 'role', 'created_at']);
+            ->select(['id', 'full_name', 'email', 'phone', 'role', 'created_at'])
+            ->withCount(['createdTours as created_tours_count', 'createdTours as tours_count']);
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);

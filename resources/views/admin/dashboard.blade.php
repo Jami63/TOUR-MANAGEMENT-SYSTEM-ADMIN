@@ -128,7 +128,7 @@
                             </td>
                             <td class="py-3.5 px-4 font-semibold text-on-surface">
                                 <span class="px-2 py-0.5 rounded-md bg-surface-container text-xs">
-                                    {{ $u->tours_count ?? 0 }} {{ Str::plural('tour', $u->tours_count ?? 0) }}
+                                    {{ $u->created_tours_count ?? $u->tours_count ?? 0 }} {{ Str::plural('tour', $u->created_tours_count ?? $u->tours_count ?? 0) }}
                                 </span>
                             </td>
                             <td class="py-3.5 px-4 text-secondary">
