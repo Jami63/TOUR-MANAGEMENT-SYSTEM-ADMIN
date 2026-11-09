@@ -13,11 +13,8 @@ class SettlementService
     /**
      * Calculate financial summary and individual settlement balances for a tour.
      *
-     * Net Balance = Total Amount Paid − Equal Share of Actual Expenses.
-     * - Positive: Member receives refund.
-     * - Zero: Fully settled.
-     * - Negative: Member still owes money.
-     * - A member who paid nothing NEVER receives a refund.
+     * Refund Amount = Total Tour Budget − Total Actual Expenses.
+     * Example: Budget = 100,000, Expenses = 50,000, Refund = 50,000.
      */
     public function calculateTourFinancials(Tour $tour): array
     {
@@ -25,41 +22,29 @@ class SettlementService
 
         $members = $tour->members;
         $memberCount = $members->count();
+        $budget = (float) $tour->estimated_budget;
         $totalActualExpenses = (float) $tour->expenses()->sum('total_amount');
 
         // Sum of all verified payments across all expenses and advance payments for this tour
         $totalCollected = (float) $tour->totalCollectedMoney();
 
+        // AUTOMATIC REFUND CALCULATION RULE:
+        // Refund Amount = Total Tour Budget − Total Actual Expenses
+        $totalRefundAmount = max(0.00, round($budget - $totalActualExpenses, 2));
+
+        // Equal refund per member from remaining budget
+        $perMemberRefund = $memberCount > 0 ? round($totalRefundAmount / $memberCount, 2) : 0.00;
+
         $membersSettlement = [];
-        $totalRefundable = 0.00;
-        $totalOutstandingDue = 0.00;
 
         foreach ($members as $member) {
-            // Total amount actually paid by this member for all tour expenses and advance payments
             $totalPaid = (float) $member->totalPaidAmount();
-
-            // Total equal shares assigned to this member across all tour expenses
             $totalShare = (float) $member->expenseShares()->sum('share_amount');
-
-            // Net balance = Total Amount Paid − Equal Share of Actual Expenses
             $netBalance = round($totalPaid - $totalShare, 2);
 
-            $refundAmount = 0.00;
+            $refundAmount = $perMemberRefund;
             $dueAmount = 0.00;
-            $status = 'Settled';
-
-            if ($netBalance > 0.0001) {
-                // Member overpaid compared to actual equal expenses -> receives refund
-                // Only if member actually paid money!
-                $refundAmount = $netBalance;
-                $totalRefundable += $refundAmount;
-                $status = 'Refund Due';
-            } elseif ($netBalance < -0.0001) {
-                // Member underpaid -> owes money
-                $dueAmount = abs($netBalance);
-                $totalOutstandingDue += $dueAmount;
-                $status = 'Payment Due';
-            }
+            $status = $refundAmount > 0.0001 ? 'Refund Due' : 'Settled';
 
             // Existing refund record (if any)
             $existingRefund = Refund::where('tour_member_id', $member->id)->first();
@@ -80,7 +65,7 @@ class SettlementService
             ];
         }
 
-        $remainingFundBalance = round($totalCollected - $totalActualExpenses, 2);
+        $remainingFundBalance = $totalRefundAmount;
 
         return [
             'tour_id' => $tour->id,
@@ -88,13 +73,14 @@ class SettlementService
             'status' => $tour->status,
             'finish_type' => $tour->finish_type,
             'finished_at' => $tour->finished_at,
-            'estimated_budget' => (float) $tour->estimated_budget,
+            'estimated_budget' => $budget,
             'member_count' => $memberCount,
             'total_actual_expenses' => round($totalActualExpenses, 2),
             'total_collected_money' => round($totalCollected, 2),
             'remaining_fund_balance' => $remainingFundBalance,
-            'total_refundable_amount' => round($totalRefundable, 2),
-            'total_outstanding_due' => round($totalOutstandingDue, 2),
+            'total_refundable_amount' => $totalRefundAmount,
+            'refund_amount' => $totalRefundAmount,
+            'total_outstanding_due' => 0.00,
             'members' => $membersSettlement,
         ];
     }
@@ -110,7 +96,7 @@ class SettlementService
             $tour->status = 'completed';
             $tour->finish_type = 'normal';
             $tour->finished_at = now();
-            $tour->settlement_notes = $data['notes'] ?? null;
+            $tour->settlement_notes = $data['notes'] ?? $data['settlement_notes'] ?? null;
             $tour->total_collected = $financials['total_collected_money'];
             $tour->total_actual_expense = $financials['total_actual_expenses'];
             $tour->total_refund_amount = $financials['total_refundable_amount'];
