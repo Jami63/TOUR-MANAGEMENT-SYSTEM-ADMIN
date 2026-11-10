@@ -215,11 +215,49 @@ class AuthController extends Controller
             ]);
         }
 
-        $request->validate([
-            'profile_picture' => ['required', 'string'],
-        ]);
+        $photoUrl = null;
 
-        $user->profile_picture = $request->input('profile_picture');
+        // Check if a file was uploaded via multipart/form-data
+        $file = $request->file('photo') ?? $request->file('profile_picture') ?? $request->file('image');
+        if ($file && $file->isValid()) {
+            $uploadDir = public_path('uploads/profile_pictures');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            $extension = $file->getClientOriginalExtension() ?: 'jpg';
+            $filename = 'profile_' . $user->id . '_' . time() . '.' . $extension;
+            $file->move($uploadDir, $filename);
+            $photoUrl = url('uploads/profile_pictures/' . $filename);
+        } elseif ($request->filled('profile_picture')) {
+            $raw = $request->input('profile_picture');
+            if (str_starts_with($raw, 'data:image') || (strlen($raw) > 300 && !str_starts_with($raw, 'http'))) {
+                // Decode base64 image data
+                $uploadDir = public_path('uploads/profile_pictures');
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $clean = preg_replace('#^data:image/\w+;base64,#i', '', $raw);
+                $decoded = base64_decode($clean);
+                if ($decoded !== false) {
+                    $filename = 'profile_' . $user->id . '_' . time() . '.jpg';
+                    file_put_contents($uploadDir . DIRECTORY_SEPARATOR . $filename, $decoded);
+                    $photoUrl = url('uploads/profile_pictures/' . $filename);
+                } else {
+                    $photoUrl = $raw;
+                }
+            } else {
+                $photoUrl = $raw;
+            }
+        }
+
+        if (empty($photoUrl)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide a valid image file or photo URL.',
+            ], 422);
+        }
+
+        $user->profile_picture = $photoUrl;
         $user->save();
 
         return response()->json([
