@@ -279,7 +279,7 @@ class TourManagementFeaturesTest extends TestCase
             'start_location' => 'Dhaka',
             'start_date' => now()->subDays(5)->toDateString(),
             'end_date' => now()->subDays(1)->toDateString(),
-            'estimated_budget' => 30000,
+            'estimated_budget' => 25000,
             'status' => 'ongoing',
             'created_by' => $this->manager->id,
         ]);
@@ -333,12 +333,91 @@ class TourManagementFeaturesTest extends TestCase
         // Refund record created for Alice (৳5,000)
         $refund = Refund::where('tour_id', $tour->id)->where('tour_member_id', $m1->id)->first();
         $this->assertNotNull($refund);
-        $this->assertEquals(5000.00, (float) $refund->refund_amount);
+        $this->assertEquals(2500.00, (float) $refund->refund_amount);
         $this->assertEquals('pending', $refund->status);
 
-        // Bob has 0 refund
+        // Bob also gets his equal share of remaining budget refund (৳2,500)
         $bobRefund = Refund::where('tour_id', $tour->id)->where('tour_member_id', $m2->id)->first();
-        $this->assertNull($bobRefund);
+        $this->assertNotNull($bobRefund);
+        $this->assertEquals(2500.00, (float) $bobRefund->refund_amount);
+    }
+
+    /**
+     * Requirement: Tour must NOT be finished if any participant has an outstanding tour share or payment due.
+     */
+    public function test_tour_cannot_be_finished_if_participant_has_outstanding_due(): void
+    {
+        $tour = Tour::create([
+            'tour_name' => 'Unpaid Member Tour',
+            'start_location' => 'Dhaka',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDays(2)->toDateString(),
+            'estimated_budget' => 20000,
+            'status' => 'ongoing',
+            'created_by' => $this->manager->id,
+        ]);
+
+        $m1 = TourMember::create(['tour_id' => $tour->id, 'name' => 'Charlie']);
+        $m2 = TourMember::create(['tour_id' => $tour->id, 'name' => 'Dave']);
+
+        $expense = Expense::create([
+            'tour_id' => $tour->id,
+            'expense_name' => 'Transport',
+            'category_id' => $this->category->id,
+            'total_amount' => 2000,
+            'added_by' => $this->manager->id,
+            'expense_date' => now()->toDateString(),
+        ]);
+
+        // Each has share of 1,000
+        $s1 = ExpenseShare::create(['expense_id' => $expense->id, 'tour_member_id' => $m1->id, 'share_amount' => 1000]);
+        $s2 = ExpenseShare::create(['expense_id' => $expense->id, 'tour_member_id' => $m2->id, 'share_amount' => 1000]);
+
+        // Charlie paid only 500 (500 outstanding)
+        Payment::create([
+            'share_id' => $s1->id,
+            'amount' => 500,
+            'method' => 'cash',
+            'status' => 'verified',
+            'submitted_at' => now(),
+        ]);
+
+        // Dave paid full 1000
+        Payment::create([
+            'share_id' => $s2->id,
+            'amount' => 1000,
+            'method' => 'cash',
+            'status' => 'verified',
+            'submitted_at' => now(),
+        ]);
+
+        // 1. Attempt API finish
+        $apiResponse = $this->actingAs($this->manager)->postJson("/api/tours/{$tour->id}/finish");
+        $apiResponse->assertStatus(422);
+        $apiResponse->assertJsonFragment(['success' => false]);
+        $this->assertStringContainsString('Charlie', $apiResponse->json('message'));
+        $this->assertStringContainsString('500.00', $apiResponse->json('message'));
+
+        // Tour status MUST NOT have changed
+        $tour->refresh();
+        $this->assertEquals('ongoing', $tour->status);
+
+        // 2. Now Charlie pays remaining 500
+        Payment::create([
+            'share_id' => $s1->id,
+            'amount' => 500,
+            'method' => 'cash',
+            'status' => 'verified',
+            'submitted_at' => now(),
+        ]);
+
+        // 3. Now finish succeeds
+        $apiResponse2 = $this->actingAs($this->manager)->postJson("/api/tours/{$tour->id}/finish");
+        $apiResponse2->assertStatus(200);
+        $apiResponse2->assertJsonFragment(['success' => true]);
+
+        $tour->refresh();
+        $this->assertEquals('completed', $tour->status);
     }
 
     /**

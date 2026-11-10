@@ -29,12 +29,17 @@ class SettlementService
         $totalCollected = (float) $tour->totalCollectedMoney();
 
         // AUTOMATIC REFUND CALCULATION RULE:
-        // Refund Amount = Total Tour Budget − Total Actual Expenses
-        $totalRefundAmount = max(0.00, round($budget - $totalActualExpenses, 2));
+        // When actual expenses occurred: Refund Amount = Total Tour Budget − Total Actual Expenses
+        // When zero expenses occurred: Refund Amount = Total Collected Money (return deposited funds to payers)
+        if ($totalActualExpenses > 0) {
+            $totalRefundAmount = max(0.00, round($budget - $totalActualExpenses, 2));
+            $perMemberRefund = $memberCount > 0 ? round($totalRefundAmount / $memberCount, 2) : 0.00;
+        } else {
+            $totalRefundAmount = round($totalCollected, 2);
+            $perMemberRefund = 0.00;
+        }
 
-        // Equal refund per member from remaining budget
-        $perMemberRefund = $memberCount > 0 ? round($totalRefundAmount / $memberCount, 2) : 0.00;
-
+        $totalOutstandingDue = 0.00;
         $membersSettlement = [];
 
         foreach ($members as $member) {
@@ -42,9 +47,23 @@ class SettlementService
             $totalShare = (float) $member->expenseShares()->sum('share_amount');
             $netBalance = round($totalPaid - $totalShare, 2);
 
-            $refundAmount = $perMemberRefund;
-            $dueAmount = 0.00;
-            $status = $refundAmount > 0.0001 ? 'Refund Due' : 'Settled';
+            // A member has an outstanding due if their paid amount is less than their required expense share
+            $remainingDue = max(0.00, round($totalShare - $totalPaid, 2));
+
+            if ($remainingDue > 0.001) {
+                $dueAmount = $remainingDue;
+                $refundAmount = 0.00;
+                $status = 'Payment Due';
+                $totalOutstandingDue += $dueAmount;
+            } else {
+                $dueAmount = 0.00;
+                if ($totalActualExpenses <= 0) {
+                    $refundAmount = $totalPaid;
+                } else {
+                    $refundAmount = $perMemberRefund;
+                }
+                $status = $refundAmount > 0.0001 ? 'Refund Due' : 'Settled';
+            }
 
             // Existing refund record (if any)
             $existingRefund = Refund::where('tour_member_id', $member->id)->first();
@@ -58,6 +77,7 @@ class SettlementService
                 'total_paid' => $totalPaid,
                 'total_share' => $totalShare,
                 'net_balance' => $netBalance,
+                'remaining_due' => $dueAmount,
                 'refund_amount' => $refundAmount,
                 'due_amount' => $dueAmount,
                 'settlement_status' => $status,
@@ -80,7 +100,8 @@ class SettlementService
             'remaining_fund_balance' => $remainingFundBalance,
             'total_refundable_amount' => $totalRefundAmount,
             'refund_amount' => $totalRefundAmount,
-            'total_outstanding_due' => 0.00,
+            'total_outstanding_due' => round($totalOutstandingDue, 2),
+            'has_outstanding_due' => $totalOutstandingDue > 0.001,
             'members' => $membersSettlement,
         ];
     }
@@ -92,6 +113,18 @@ class SettlementService
     {
         return DB::transaction(function () use ($tour, $data) {
             $financials = $this->calculateTourFinancials($tour);
+
+            // Validation: Prevent finishing the tour if any participant has an outstanding payment
+            if (($financials['total_outstanding_due'] ?? 0) > 0.001) {
+                $unpaid = [];
+                foreach ($financials['members'] as $m) {
+                    if (($m['due_amount'] ?? 0) > 0.001) {
+                        $unpaid[] = "{$m['name']} (৳" . number_format($m['due_amount'], 2) . " due)";
+                    }
+                }
+                $listStr = implode(', ', $unpaid);
+                throw new \DomainException("Cannot finish tour. The following participant(s) have outstanding payments: {$listStr}. All outstanding payments must be collected and recorded before finishing.");
+            }
 
             $tour->status = 'completed';
             $tour->finish_type = 'normal';

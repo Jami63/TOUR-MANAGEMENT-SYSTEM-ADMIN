@@ -410,7 +410,11 @@ class TourController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $this->settlementService->finishTour($tour, $manager, $validated);
+        try {
+            $this->settlementService->finishTour($tour, $manager, $validated);
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', "Tour '{$tour->tour_name}' has been successfully completed! Final settlement report and refund records generated.");
     }
@@ -432,12 +436,16 @@ class TourController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $this->settlementService->emergencyFinishTour(
-            $tour,
-            $manager,
-            $validated['emergency_reason'],
-            $validated['notes'] ?? null
-        );
+        try {
+            $this->settlementService->emergencyFinishTour(
+                $tour,
+                $manager,
+                $validated['emergency_reason'],
+                $validated['notes'] ?? null
+            );
+        } catch (\DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', "Tour '{$tour->tour_name}' finished early due to emergency. Settlement and refund records have been established.");
     }

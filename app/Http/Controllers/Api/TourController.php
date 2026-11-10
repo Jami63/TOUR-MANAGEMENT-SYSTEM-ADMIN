@@ -257,13 +257,25 @@ class TourController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
         }
 
-        $financials = $service->finishTour($tour, $user, $request->all());
+        try {
+            $financials = $service->finishTour($tour, $user, $request->all());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tour finished successfully',
-            'settlement' => $financials,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Tour finished successfully',
+                'settlement' => $financials,
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Unable to finish tour.',
+            ], 500);
+        }
     }
 
     /**
@@ -282,13 +294,25 @@ class TourController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $financials = $service->emergencyFinishTour($tour, $user, $validated['emergency_reason'], $validated['notes'] ?? null);
+        try {
+            $financials = $service->emergencyFinishTour($tour, $user, $validated['emergency_reason'], $validated['notes'] ?? null);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tour finished early due to emergency',
-            'settlement' => $financials,
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Tour finished early due to emergency',
+                'settlement' => $financials,
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Unable to finish tour.',
+            ], 500);
+        }
     }
 
     /**
