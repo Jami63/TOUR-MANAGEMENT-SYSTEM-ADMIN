@@ -333,13 +333,12 @@ class TourManagementFeaturesTest extends TestCase
         // Refund record created for Alice (৳5,000)
         $refund = Refund::where('tour_id', $tour->id)->where('tour_member_id', $m1->id)->first();
         $this->assertNotNull($refund);
-        $this->assertEquals(2500.00, (float) $refund->refund_amount);
+        $this->assertEquals(5000.00, (float) $refund->refund_amount);
         $this->assertEquals('pending', $refund->status);
 
-        // Bob also gets his equal share of remaining budget refund (৳2,500)
+        // Bob paid exact share (10,000), so 0 refund
         $bobRefund = Refund::where('tour_id', $tour->id)->where('tour_member_id', $m2->id)->first();
-        $this->assertNotNull($bobRefund);
-        $this->assertEquals(2500.00, (float) $bobRefund->refund_amount);
+        $this->assertNull($bobRefund);
     }
 
     /**

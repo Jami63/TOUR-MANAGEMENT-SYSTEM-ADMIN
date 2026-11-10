@@ -13,8 +13,9 @@ class SettlementService
     /**
      * Calculate financial summary and individual settlement balances for a tour.
      *
-     * Refund Amount = Total Tour Budget − Total Actual Expenses.
-     * Example: Budget = 100,000, Expenses = 50,000, Refund = 50,000.
+     * Refund Amount = Total Collection − Total Actual Expenses.
+     * The remaining collected funds after deducting actual expenses are refunded.
+     * Example: Total Collection = 25,000, Total Expenses = 20,000, Refund = 5,000.
      */
     public function calculateTourFinancials(Tour $tour): array
     {
@@ -29,15 +30,8 @@ class SettlementService
         $totalCollected = (float) $tour->totalCollectedMoney();
 
         // AUTOMATIC REFUND CALCULATION RULE:
-        // When actual expenses occurred: Refund Amount = Total Tour Budget − Total Actual Expenses
-        // When zero expenses occurred: Refund Amount = Total Collected Money (return deposited funds to payers)
-        if ($totalActualExpenses > 0) {
-            $totalRefundAmount = max(0.00, round($budget - $totalActualExpenses, 2));
-            $perMemberRefund = $memberCount > 0 ? round($totalRefundAmount / $memberCount, 2) : 0.00;
-        } else {
-            $totalRefundAmount = round($totalCollected, 2);
-            $perMemberRefund = 0.00;
-        }
+        // Refund Amount = Total Collection − Total Actual Expenses
+        $totalRefundAmount = max(0.00, round($totalCollected - $totalActualExpenses, 2));
 
         $totalOutstandingDue = 0.00;
         $membersSettlement = [];
@@ -57,11 +51,7 @@ class SettlementService
                 $totalOutstandingDue += $dueAmount;
             } else {
                 $dueAmount = 0.00;
-                if ($totalActualExpenses <= 0) {
-                    $refundAmount = $totalPaid;
-                } else {
-                    $refundAmount = $perMemberRefund;
-                }
+                $refundAmount = max(0.00, $netBalance);
                 $status = $refundAmount > 0.0001 ? 'Refund Due' : 'Settled';
             }
 
