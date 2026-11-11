@@ -95,6 +95,11 @@ class Tour extends Model
         return $this->hasMany(Payment::class, 'tour_id');
     }
 
+    public function backpackItems(): HasMany
+    {
+        return $this->hasMany(TourBackpackItem::class, 'tour_id')->orderBy('id');
+    }
+
     public function isFinished(): bool
     {
         return in_array($this->status, ['completed', 'emergency_finished']);

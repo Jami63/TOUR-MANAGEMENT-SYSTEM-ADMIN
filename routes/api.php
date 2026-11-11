@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\MemberSummaryController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\TourBackpackController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourMemberController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tours/{tourId}/members', [TourMemberController::class, 'index']);
     Route::post('/tours/{tourId}/members', [TourMemberController::class, 'store']);
     Route::delete('/tours/{tourId}/members/{memberId}', [TourMemberController::class, 'destroy']);
+
+    // Tour Backpack Checklist API (Category-wise dynamic checklist)
+    Route::get('/tours/{tourId}/backpack-items', [TourBackpackController::class, 'index']);
+    Route::post('/tours/{tourId}/backpack-items', [TourBackpackController::class, 'store']);
+    Route::patch('/tours/{tourId}/backpack-items/{itemId}/toggle', [TourBackpackController::class, 'toggle']);
+    Route::delete('/tours/{tourId}/backpack-items/{itemId}', [TourBackpackController::class, 'destroy']);
+    Route::post('/tours/{tourId}/backpack-items/reset', [TourBackpackController::class, 'resetCategory']);
     Route::get('/users/search', [TourMemberController::class, 'searchUsers']);
 
     // Expenses & Auto-Split API
