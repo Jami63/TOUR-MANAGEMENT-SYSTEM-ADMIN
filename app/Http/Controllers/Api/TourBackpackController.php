@@ -12,59 +12,126 @@ use Illuminate\Http\Request;
 class TourBackpackController extends Controller
 {
     /**
-     * Get backpack items for a specific tour.
-     * Automatically initializes items from default templates if not yet created.
+     * Get backpack items for a specific tour and category.
+     * Dynamically initializes each category from its own default templates if not yet initialized.
      */
     public function index(Request $request, int $tourId): JsonResponse
     {
         $tour = Tour::findOrFail($tourId);
 
-        // Normalize tour categories
-        $categories = $tour->categories ?? [];
-        if (is_string($categories)) {
-            $decoded = json_decode($categories, true);
-            $categories = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $categories)));
+        // Normalize tour's assigned categories
+        $tourCategories = $tour->categories ?? [];
+        if (is_string($tourCategories)) {
+            $decoded = json_decode($tourCategories, true);
+            $tourCategories = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $tourCategories)));
         }
 
-        if (empty($categories)) {
-            // If tour has no specific category assigned, use the first category from defaults as fallback
-            $fallback = DefaultBackpackItem::distinct()->pluck('category')->first() ?? 'Beach & Island Tours';
-            $categories = [$fallback];
+        // Get requested category from query parameter, if specified
+        $requestedCategory = $request->query('category');
+        if (! empty($requestedCategory)) {
+            $requestedCategory = trim($requestedCategory);
         }
 
-        // Initialize any missing categories from default template items
-        foreach ($categories as $cat) {
-            $catTrimmed = trim($cat);
-            $exists = TourBackpackItem::where('tour_id', $tourId)->where('category', $catTrimmed)->exists();
+        // Determine active category:
+        // Priority:
+        // 1. Explicitly requested category ($request->query('category'))
+        // 2. First category assigned to the tour
+        // 3. First category already existing in this tour's backpack items
+        // 4. Default to 'Beach & Island Tours'
+        $activeCategory = $requestedCategory;
+        if (empty($activeCategory)) {
+            if (! empty($tourCategories)) {
+                $activeCategory = trim($tourCategories[0]);
+            } else {
+                $existingCat = TourBackpackItem::where('tour_id', $tourId)->value('category');
+                $activeCategory = $existingCat ?: 'Beach & Island Tours';
+            }
+        }
+
+        // Ensure the active category has its items initialized from default templates
+        if (! empty($activeCategory)) {
+            $exists = TourBackpackItem::where('tour_id', $tourId)
+                ->where('category', $activeCategory)
+                ->exists();
+
             if (! $exists) {
-                $defaults = DefaultBackpackItem::where('category', $catTrimmed)->orderBy('order_index')->get();
+                $defaults = DefaultBackpackItem::where('category', $activeCategory)
+                    ->orderBy('order_index')
+                    ->get();
+
                 foreach ($defaults as $d) {
                     TourBackpackItem::create([
                         'tour_id' => $tourId,
-                        'category' => $catTrimmed,
+                        'category' => $activeCategory,
                         'item_name' => $d->item_name,
                         'is_packed' => false,
                         'is_custom' => false,
                     ]);
                 }
+
+                // If tour had no category assigned in database, link this category to tour
+                if (empty($tourCategories)) {
+                    $tour->categories = [$activeCategory];
+                    $tour->save();
+                    $tourCategories = [$activeCategory];
+                }
             }
         }
 
-        $query = TourBackpackItem::where('tour_id', $tourId);
+        // If tour had multiple categories assigned, ensure all of them are also initialized
+        foreach ($tourCategories as $cat) {
+            $catTrimmed = trim($cat);
+            if (! empty($catTrimmed) && $catTrimmed !== $activeCategory) {
+                $exists = TourBackpackItem::where('tour_id', $tourId)
+                    ->where('category', $catTrimmed)
+                    ->exists();
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
+                if (! $exists) {
+                    $defaults = DefaultBackpackItem::where('category', $catTrimmed)
+                        ->orderBy('order_index')
+                        ->get();
+
+                    foreach ($defaults as $d) {
+                        TourBackpackItem::create([
+                            'tour_id' => $tourId,
+                            'category' => $catTrimmed,
+                            'item_name' => $d->item_name,
+                            'is_packed' => false,
+                            'is_custom' => false,
+                        ]);
+                    }
+                }
+            }
         }
 
-        $items = $query->orderBy('id')->get();
+        // Query items strictly for the active category
+        $items = TourBackpackItem::where('tour_id', $tourId)
+            ->where('category', $activeCategory)
+            ->orderBy('id')
+            ->get();
 
-        // Also fetch all available categories in the system dynamically from DB
-        $allSystemCategories = DefaultBackpackItem::distinct()->pluck('category')->values();
+        // Get all categories that currently exist for this tour in backpack
+        $existingCategories = TourBackpackItem::where('tour_id', $tourId)
+            ->distinct()
+            ->pluck('category')
+            ->values();
+
+        $allTourCategories = collect($tourCategories)
+            ->merge($existingCategories)
+            ->unique()
+            ->values();
+
+        // All 20 system categories from default catalog
+        $allSystemCategories = DefaultBackpackItem::distinct()
+            ->orderBy('id')
+            ->pluck('category')
+            ->values();
 
         return response()->json([
             'success' => true,
             'tour_id' => $tourId,
-            'tour_categories' => array_values($categories),
+            'active_category' => $activeCategory,
+            'tour_categories' => $allTourCategories,
             'all_categories' => $allSystemCategories,
             'total_items' => $items->count(),
             'packed_items' => $items->where('is_packed', true)->count(),
@@ -83,10 +150,11 @@ class TourBackpackController extends Controller
         ]);
 
         $tour = Tour::findOrFail($tourId);
+        $category = trim($request->category);
 
         $item = TourBackpackItem::create([
             'tour_id' => $tourId,
-            'category' => trim($request->category),
+            'category' => $category,
             'item_name' => trim($request->item_name),
             'is_packed' => false,
             'is_custom' => true,

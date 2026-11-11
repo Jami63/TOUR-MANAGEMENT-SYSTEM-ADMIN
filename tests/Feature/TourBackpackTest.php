@@ -110,4 +110,80 @@ class TourBackpackTest extends TestCase
         $deleteRes->assertStatus(200)->assertJson(['success' => true]);
         $this->assertDatabaseMissing('tour_backpack_items', ['id' => $item->id]);
     }
+
+    public function test_category_wise_backpack_loads_distinct_items_for_different_categories(): void
+    {
+        $user = User::factory()->create(['role' => 'manager']);
+        $tour = Tour::create([
+            'created_by' => $user->id,
+            'tour_name' => 'Sajek Tour',
+            'start_location' => 'Dhaka',
+            'categories' => ['Mountain & Hiking Tours', 'Beach & Island Tours'],
+            'start_date' => now()->addDays(2)->format('Y-m-d'),
+            'end_date' => now()->addDays(5)->format('Y-m-d'),
+            'estimated_budget' => 20000,
+            'status' => 'upcoming',
+        ]);
+
+        // Request Beach & Island Tours
+        $beachRes = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/tours/{$tour->id}/backpack-items?category=" . urlencode('Beach & Island Tours'));
+        $beachRes->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'active_category' => 'Beach & Island Tours',
+                'total_items' => 8,
+            ]);
+        $beachItemNames = collect($beachRes->json('items'))->pluck('item_name')->toArray();
+        $this->assertContains('Swimsuit', $beachItemNames);
+        $this->assertContains('Sunscreen', $beachItemNames);
+        $this->assertNotContains('Hiking boots', $beachItemNames);
+
+        // Request Mountain & Hiking Tours
+        $mountainRes = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/tours/{$tour->id}/backpack-items?category=" . urlencode('Mountain & Hiking Tours'));
+        $mountainRes->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'active_category' => 'Mountain & Hiking Tours',
+                'total_items' => 8,
+            ]);
+        $mountainItemNames = collect($mountainRes->json('items'))->pluck('item_name')->toArray();
+        $this->assertContains('Hiking boots', $mountainItemNames);
+        $this->assertContains('Trekking poles', $mountainItemNames);
+        $this->assertNotContains('Swimsuit', $mountainItemNames);
+    }
+
+    public function test_changes_in_one_category_do_not_affect_other_category(): void
+    {
+        $user = User::factory()->create(['role' => 'manager']);
+        $tour = Tour::create([
+            'created_by' => $user->id,
+            'tour_name' => 'Multi Category Tour',
+            'start_location' => 'Sylhet',
+            'categories' => ['Camping & Nature Tours', 'Food & Culinary Tours'],
+            'start_date' => now()->addDays(1)->format('Y-m-d'),
+            'end_date' => now()->addDays(4)->format('Y-m-d'),
+            'estimated_budget' => 25000,
+            'status' => 'upcoming',
+        ]);
+
+        // Add custom item to Camping & Nature Tours
+        $this->actingAs($user, 'sanctum')->postJson("/api/tours/{$tour->id}/backpack-items", [
+            'category' => 'Camping & Nature Tours',
+            'item_name' => 'Custom Camping Light',
+        ])->assertStatus(201);
+
+        // Verify custom item is in Camping & Nature Tours
+        $campingRes = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/tours/{$tour->id}/backpack-items?category=" . urlencode('Camping & Nature Tours'));
+        $campingItems = collect($campingRes->json('items'))->pluck('item_name')->toArray();
+        $this->assertContains('Custom Camping Light', $campingItems);
+
+        // Verify Food & Culinary Tours does NOT contain custom camping light
+        $foodRes = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/tours/{$tour->id}/backpack-items?category=" . urlencode('Food & Culinary Tours'));
+        $foodItems = collect($foodRes->json('items'))->pluck('item_name')->toArray();
+        $this->assertNotContains('Custom Camping Light', $foodItems);
+    }
 }
