@@ -16,6 +16,7 @@ class Tour extends Model
         'created_by',
         'tour_name',
         'start_location',
+        'categories',
         'start_date',
         'end_date',
         'estimated_budget',
@@ -35,6 +36,7 @@ class Tour extends Model
     protected function casts(): array
     {
         return [
+            'categories' => 'array',
             'start_date' => 'date',
             'end_date' => 'date',
             'estimated_budget' => 'decimal:2',

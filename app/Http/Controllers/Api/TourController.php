@@ -59,6 +59,7 @@ class TourController extends Controller
         $validated = $request->validate([
             'tour_name' => ['required', 'string', 'max:255'],
             'start_location' => ['required', 'string', 'max:255'],
+            'categories' => ['nullable'],
             'destinations' => ['required', 'array', 'min:1'],
             'destinations.*' => ['string'],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
@@ -74,10 +75,17 @@ class TourController extends Controller
         $startDate = \Carbon\Carbon::parse($validated['start_date'])->startOfDay();
         $initialStatus = $startDate->equalTo($today) ? 'ongoing' : 'upcoming';
 
+        $categories = $request->input('categories');
+        if (is_string($categories)) {
+            $decoded = json_decode($categories, true);
+            $categories = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $categories)));
+        }
+
         $tour = Tour::create([
             'created_by' => $user->id,
             'tour_name' => $validated['tour_name'],
             'start_location' => $validated['start_location'],
+            'categories' => is_array($categories) ? array_values($categories) : null,
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
             'estimated_budget' => $validated['estimated_budget'],
@@ -137,6 +145,7 @@ class TourController extends Controller
         $validated = $request->validate([
             'tour_name' => ['required', 'string', 'max:255'],
             'start_location' => ['required', 'string', 'max:255'],
+            'categories' => ['nullable'],
             'destinations' => ['required', 'array', 'min:1'],
             'destinations.*' => ['string'],
             'start_date' => ['required', 'date'],
@@ -147,14 +156,25 @@ class TourController extends Controller
             'end_date.after_or_equal' => 'Tour end date must be on or after the start date.',
         ]);
 
-        $tour->update([
+        $updateData = [
             'tour_name' => $validated['tour_name'],
             'start_location' => $validated['start_location'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],
             'estimated_budget' => $validated['estimated_budget'],
             'description' => $validated['description'] ?? null,
-        ]);
+        ];
+
+        if ($request->has('categories')) {
+            $categories = $request->input('categories');
+            if (is_string($categories)) {
+                $decoded = json_decode($categories, true);
+                $categories = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', $categories)));
+            }
+            $updateData['categories'] = is_array($categories) ? array_values($categories) : null;
+        }
+
+        $tour->update($updateData);
 
         // Re-sync destinations
         TourDestination::where('tour_id', $tour->id)->delete();
