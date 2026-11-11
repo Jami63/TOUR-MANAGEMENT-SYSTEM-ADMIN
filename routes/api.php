@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/profile/photo', [AuthController::class, 'updateProfilePhoto']);
     Route::delete('/profile/photo', [AuthController::class, 'clearProfilePhoto']);
+    Route::post('/profile/password', [AuthController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Tours API

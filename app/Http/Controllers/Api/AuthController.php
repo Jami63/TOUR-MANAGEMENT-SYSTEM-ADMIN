@@ -298,6 +298,37 @@ class AuthController extends Controller
     }
 
     /**
+     * Reset / Update Password for Authenticated User
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => ['nullable', 'string'],
+            'new_password' => ['required', 'string', 'min:6'],
+            'new_password_confirmation' => ['nullable', 'string', 'same:new_password'],
+        ]);
+
+        if (! empty($validated['current_password'])) {
+            if (! Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The current password provided is incorrect.',
+                ], 422);
+            }
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password has been reset successfully.',
+        ]);
+    }
+
+    /**
      * Mobile Logout API
      */
     public function logout(Request $request): JsonResponse
