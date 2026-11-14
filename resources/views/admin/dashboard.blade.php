@@ -24,8 +24,8 @@
         </div>
     </div>
 
-    <!-- 3 Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Card 1: Registered Tour Managers -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
             <div>
@@ -47,18 +47,6 @@
             </div>
             <div class="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-secondary shadow-sm">
                 <span class="material-symbols-outlined text-[26px]">travel_explore</span>
-            </div>
-        </div>
-
-        <!-- Card 3: Emergency Finished -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Emergency Finished</span>
-                <span class="font-display text-3xl font-extrabold text-error block mt-1">{{ $emergencyTours }}</span>
-                <span class="text-[11px] text-outline mt-0.5 block">Terminated early</span>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-error/10 flex items-center justify-center text-error shadow-sm">
-                <span class="material-symbols-outlined text-[26px]">warning</span>
             </div>
         </div>
     </div>
