@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tour;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -21,13 +23,11 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['nullable', 'in:manager,member,super_admin'],
+            'role' => ['nullable', 'in:manager,member'],
         ]);
 
-        $role = $validated['role'] ?? 'manager';
-        if ($role === 'super_admin' || User::where('role', 'super_admin')->count() === 0 || str_contains(strtolower($validated['email']), 'admin') || str_contains(strtolower($validated['full_name']), 'admin')) {
-            $role = 'super_admin';
-        }
+        // Default mobile registration role is manager (or member if explicitly requested)
+        $role = (isset($validated['role']) && $validated['role'] === 'member') ? 'member' : 'manager';
 
         $result = $otpService->generateAndSendOtp($validated['email'], [
             'full_name' => $validated['full_name'],
@@ -218,35 +218,51 @@ class AuthController extends Controller
         $photoUrl = null;
 
         // Check if a file was uploaded via multipart/form-data
-        $file = $request->file('photo') ?? $request->file('profile_picture') ?? $request->file('image');
-        if ($file && $file->isValid()) {
-            $uploadDir = public_path('uploads/profile_pictures');
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+        if ($request->hasFile('photo') || $request->hasFile('profile_picture') || $request->hasFile('image')) {
+            $field = $request->hasFile('photo') ? 'photo' : ($request->hasFile('profile_picture') ? 'profile_picture' : 'image');
+            $request->validate([
+                $field => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
+            ]);
+            $file = $request->file($field);
+            if ($file && $file->isValid()) {
+                $uploadDir = public_path('uploads/profile_pictures');
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $ext = in_array(strtolower($file->extension()), ['jpg', 'jpeg', 'png', 'webp']) ? strtolower($file->extension()) : 'jpg';
+                $filename = 'profile_' . $user->id . '_' . Str::random(16) . '.' . $ext;
+                $file->move($uploadDir, $filename);
+                $photoUrl = url('uploads/profile_pictures/' . $filename);
             }
-            $extension = $file->getClientOriginalExtension() ?: 'jpg';
-            $filename = 'profile_' . $user->id . '_' . time() . '.' . $extension;
-            $file->move($uploadDir, $filename);
-            $photoUrl = url('uploads/profile_pictures/' . $filename);
         } elseif ($request->filled('profile_picture')) {
             $raw = $request->input('profile_picture');
             if (str_starts_with($raw, 'data:image') || (strlen($raw) > 300 && !str_starts_with($raw, 'http'))) {
                 // Decode base64 image data
                 $uploadDir = public_path('uploads/profile_pictures');
                 if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
+                    mkdir($uploadDir, 0755, true);
                 }
                 $clean = preg_replace('#^data:image/\w+;base64,#i', '', $raw);
                 $decoded = base64_decode($clean);
                 if ($decoded !== false) {
-                    $filename = 'profile_' . $user->id . '_' . time() . '.jpg';
+                    $filename = 'profile_' . $user->id . '_' . Str::random(16) . '.jpg';
                     file_put_contents($uploadDir . DIRECTORY_SEPARATOR . $filename, $decoded);
                     $photoUrl = url('uploads/profile_pictures/' . $filename);
                 } else {
-                    $photoUrl = $raw;
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid image encoding provided.',
+                    ], 422);
                 }
             } else {
-                $photoUrl = $raw;
+                if (filter_var($raw, FILTER_VALIDATE_URL)) {
+                    $photoUrl = $raw;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid image URL provided.',
+                    ], 422);
+                }
             }
         }
 
@@ -305,26 +321,89 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'current_password' => ['nullable', 'string'],
+            'current_password' => ['required', 'string'],
             'new_password' => ['required', 'string', 'min:6'],
             'new_password_confirmation' => ['nullable', 'string', 'same:new_password'],
         ]);
 
-        if (! empty($validated['current_password'])) {
-            if (! Hash::check($validated['current_password'], $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'The current password provided is incorrect.',
-                ], 422);
-            }
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The current password provided is incorrect.',
+            ], 422);
         }
 
         $user->password = Hash::make($validated['new_password']);
         $user->save();
 
+        // Revoke other active tokens for security
+        $currentTokenId = $request->user()->currentAccessToken()?->id;
+        if ($currentTokenId) {
+            $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Password has been reset successfully.',
+            'message' => 'Password has been updated successfully.',
+        ]);
+    }
+
+    /**
+     * Delete Authenticated User Account (Apple Guideline 5.1.1(v) & Google Play Compliance)
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        if (! Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect password. Account deletion cancelled.',
+            ], 422);
+        }
+
+        // Prevent deletion if user is creator of active or ongoing tours
+        $hasActiveTours = Tour::where('created_by', $user->id)
+            ->whereIn('status', ['upcoming', 'ongoing'])
+            ->exists();
+
+        if ($hasActiveTours) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot delete your account while you have active or ongoing tours. Please complete or cancel your tours first.',
+            ], 422);
+        }
+
+        // Delete profile picture file from disk if present
+        if ($user->profile_picture && str_contains($user->profile_picture, 'uploads/profile_pictures/')) {
+            $parsedPath = parse_url($user->profile_picture, PHP_URL_PATH);
+            if ($parsedPath) {
+                $filePath = public_path(ltrim($parsedPath, '/'));
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+        }
+
+        // Anonymize user details to preserve historical accounting and expense split integrity
+        $userId = $user->id;
+        $user->full_name = 'Former Member';
+        $user->email = 'deleted_' . $userId . '_' . time() . '@safarfly.local';
+        $user->phone = null;
+        $user->profile_picture = null;
+        $user->password = Hash::make(Str::random(32));
+        $user->save();
+
+        // Revoke all Sanctum tokens
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your account and personal data have been deleted successfully.',
         ]);
     }
 

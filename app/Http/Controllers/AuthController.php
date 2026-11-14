@@ -75,11 +75,11 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'role' => ['nullable', 'in:manager,member,super_admin'],
+            'role' => ['nullable', 'in:manager,member'],
         ]);
 
-        // Web panel registration is exclusively for Super Admin (Tour Managers use the mobile app)
-        $role = 'super_admin';
+        // Web registration defaults to manager; bootstrap super_admin only if no super_admin exists yet
+        $role = User::where('role', 'super_admin')->count() === 0 ? 'super_admin' : 'manager';
 
         $res = $otpService->generateAndSendOtp($validated['email'], [
             'full_name' => $validated['full_name'],
