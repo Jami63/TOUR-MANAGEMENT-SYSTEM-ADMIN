@@ -32,6 +32,10 @@ Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp'])->name(
 Route::post('/register/resend-otp', [AuthController::class, 'resendOtp'])->name('register.otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Public Legal & Compliance Documents (Google Play & Apple Store Requirements)
+Route::view('/privacy-policy', 'legal.privacy-policy')->name('legal.privacy');
+Route::view('/terms-of-service', 'legal.terms-of-service')->name('legal.terms');
+
 // Super Admin Protected Panel (Strictly Read-Only Monitoring)
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
