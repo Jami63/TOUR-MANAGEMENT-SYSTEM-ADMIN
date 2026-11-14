@@ -77,7 +77,7 @@
                     <ul class="list-disc pl-5 space-y-1.5 text-gray-600">
                         <li><strong>Accuracy:</strong> Tour Managers are responsible for entering truthful, accurate expense records and verifying legitimate payments from participants.</li>
                         <li><strong>Security:</strong> You are responsible for safeguarding your login credentials. You must immediately notify SafarFly of any unauthorized account access.</li>
-                        <li><strong>Settlement &amp; Refunds:</strong> Final tour settlement balances and emergency refund allocations are calculated algorithmically based on user-entered expenses and verified payments. SafarFly is not liable for private financial disagreements between group members.</li>
+                        <li><strong>Settlement &amp; Refunds:</strong> Final tour settlement balances and refund allocations are calculated algorithmically based on user-entered expenses and verified payments. SafarFly is not liable for private financial disagreements between group members.</li>
                     </ul>
                 </section>
 

@@ -87,7 +87,7 @@
                     <h2 class="font-display text-lg font-bold text-navy-900 mb-2">4. How We Use Your Information</h2>
                     <ul class="list-disc pl-5 space-y-1.5 text-gray-600">
                         <li>To authenticate your identity and provide secure access to your tour workspaces.</li>
-                        <li>To calculate dynamic expense splits, outstanding dues, and fair emergency refund settlements among group members.</li>
+                        <li>To calculate dynamic expense splits, outstanding dues, and fair refund settlements among group members.</li>
                         <li>To send email verification codes (OTP) during registration to prevent unauthorized account creation.</li>
                         <li>To preserve transparent expense records accessible only to members of that specific tour.</li>
                     </ul>

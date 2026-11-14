@@ -35,11 +35,7 @@ class TourController extends Controller
             ->with(['destinations', 'members']);
 
         if ($request->filled('status')) {
-            if ($request->status === 'emergency_finished') {
-                $query->where('finish_type', 'emergency');
-            } else {
-                $query->where('status', $request->status);
-            }
+            $query->where('status', $request->status);
         }
 
         if ($request->filled('search')) {
@@ -56,8 +52,7 @@ class TourController extends Controller
         $allTours = Tour::where('created_by', $manager->id)->get();
         $totalTours = $allTours->count();
         $activeTours = $allTours->whereIn('status', ['upcoming', 'ongoing'])->count();
-        $completedTours = $allTours->where('status', 'completed')->where('finish_type', 'normal')->count();
-        $emergencyTours = $allTours->where('finish_type', 'emergency')->count();
+        $completedTours = $allTours->where('status', 'completed')->count();
         $totalBudgetSum = $allTours->sum('estimated_budget');
 
         return view('manager.tours.index', compact(
@@ -66,7 +61,6 @@ class TourController extends Controller
             'totalTours',
             'activeTours',
             'completedTours',
-            'emergencyTours',
             'totalBudgetSum'
         ));
     }
@@ -417,37 +411,6 @@ class TourController extends Controller
         }
 
         return back()->with('success', "Tour '{$tour->tour_name}' has been successfully completed! Final settlement report and refund records generated.");
-    }
-
-    /**
-     * Emergency Finish Tour (Requirement 6).
-     */
-    public function emergencyFinishTour(Request $request, int $id): RedirectResponse
-    {
-        $manager = Auth::user();
-        $tour = Tour::where('created_by', $manager->id)->findOrFail($id);
-
-        if ($tour->isFinished()) {
-            return back()->with('error', 'This tour has already been finished.');
-        }
-
-        $validated = $request->validate([
-            'emergency_reason' => ['required', 'string', 'max:1000'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        try {
-            $this->settlementService->emergencyFinishTour(
-                $tour,
-                $manager,
-                $validated['emergency_reason'],
-                $validated['notes'] ?? null
-            );
-        } catch (\DomainException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', "Tour '{$tour->tour_name}' finished early due to emergency. Settlement and refund records have been established.");
     }
 
     /**

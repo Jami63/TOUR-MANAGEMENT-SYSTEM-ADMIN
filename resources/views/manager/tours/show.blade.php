@@ -9,12 +9,7 @@
             <span>Back to All Expeditions</span>
         </a>
         <div class="flex items-center gap-2">
-            @if ($tour->isEmergencyFinished())
-                <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 flex items-center gap-1.5 border border-red-200">
-                    <span class="material-symbols-outlined text-[16px]">warning</span>
-                    <span>Emergency Finished</span>
-                </span>
-            @elseif ($tour->status === 'completed')
+            @if ($tour->status === 'completed')
                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1.5 border border-emerald-200">
                     <span class="material-symbols-outlined text-[16px]">check_circle</span>
                     <span>Tour Completed &amp; Settled</span>
@@ -67,37 +62,22 @@
                         <span>{{ $tour->expenses->count() }} Expenses Logged</span>
                     </div>
                 </div>
-
-                @if ($tour->isEmergencyFinished() && !empty($tour->emergency_reason))
-                    <div class="mt-4 p-3 rounded-xl bg-red-500/20 border border-red-400/40 text-xs text-red-200">
-                        <span class="font-bold text-white block mb-0.5">Emergency Finish Reason:</span>
-                        {{ $tour->emergency_reason }}
-                    </div>
-                @endif
             </div>
 
-            <!-- Finish Tour Action Buttons (Requirements 5 & 6) -->
+            <!-- Finish Tour Action Button -->
             @if (! $tour->isFinished())
-                <div class="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0">
-                    <!-- Normal Finish Tour Button -->
+                <div class="shrink-0">
                     <button type="button" onclick="openModal('finishTourModal')"
                         class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">flag</span>
                         <span>Finish Tour &amp; Settle</span>
-                    </button>
-
-                    <!-- Emergency Finish Tour Button -->
-                    <button type="button" onclick="openModal('emergencyFinishModal')"
-                        class="px-5 py-2.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 border border-red-400/30 shadow-md cursor-pointer">
-                        <span class="material-symbols-outlined text-[18px]">e911_emergency</span>
-                        <span>Emergency Finish Tour</span>
                     </button>
                 </div>
             @else
                 <div class="p-4 rounded-2xl bg-white/10 border border-white/15 text-center shrink-0">
                     <span class="text-xs text-white/70 uppercase tracking-wider block">Tour State</span>
                     <span class="font-display text-lg font-bold text-white block mt-0.5">
-                        {{ $tour->isEmergencyFinished() ? 'Emergency Closed' : 'Settled & Completed' }}
+                        Settled &amp; Completed
                     </span>
                     <span class="text-[11px] text-teal-300 block mt-1">
                         {{ $tour->finished_at ? $tour->finished_at->format('M d, Y h:i A') : '' }}
@@ -809,103 +789,6 @@
                 <button type="button" onclick="closeModal('finishTourModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-secondary">Cancel</button>
                 <button type="submit" class="px-6 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-container shadow-sm">
                     Confirm &amp; Finish Tour
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- ========================================================================= -->
-<!-- MODAL: EMERGENCY FINISH TOUR (Requirement 6 - Complete Financial Preview) -->
-<!-- ========================================================================= -->
-<div id="emergencyFinishModal" class="modal-backdrop fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-2xl border border-red-300 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-red-100">
-            <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
-                    <span class="material-symbols-outlined text-[24px]">crisis_alert</span>
-                </div>
-                <div>
-                    <h3 class="font-display text-lg font-bold text-red-900">Emergency Finish Tour</h3>
-                    <span class="text-xs text-red-600 font-semibold">Immediate early termination with financial settlement preview</span>
-                </div>
-            </div>
-            <button type="button" onclick="closeModal('emergencyFinishModal')" class="text-outline hover:text-on-surface">
-                <span class="material-symbols-outlined text-[20px]">close</span>
-            </button>
-        </div>
-
-        <!-- Settlement Preview Callout -->
-        <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1.5">
-            <p class="font-bold">Important Refund Rule:</p>
-            <p>Member's Net Balance = Total Amount Paid − Equal Share of Actual Expenses.</p>
-            <p>• Positive: Receives refund.</p>
-            <p>• Zero: No refund due.</p>
-            <p>• Negative: Member still owes money.</p>
-            <p>• A member who paid nothing will NOT receive any refund.</p>
-        </div>
-
-        <!-- Live Financial Preview Table -->
-        <div class="border border-outline-variant/30 rounded-xl overflow-hidden mb-4">
-            <table class="w-full text-left text-xs">
-                <thead class="bg-surface-container-low text-secondary uppercase text-[10px] tracking-wider">
-                    <tr>
-                        <th class="p-3">Member</th>
-                        <th class="p-3 text-right">Paid (৳)</th>
-                        <th class="p-3 text-right">Actual Share (৳)</th>
-                        <th class="p-3 text-right">Net Balance (৳)</th>
-                        <th class="p-3 text-center">Settlement</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant/10">
-                    @foreach ($financials['members'] as $m)
-                        <tr>
-                            <td class="p-3 font-bold">{{ $m['name'] }}</td>
-                            <td class="p-3 text-right font-bold text-primary">৳{{ number_format($m['total_paid'], 2) }}</td>
-                            <td class="p-3 text-right text-secondary">৳{{ number_format($m['total_share'], 2) }}</td>
-                            <td class="p-3 text-right font-extrabold {{ $m['net_balance'] > 0 ? 'text-emerald-700' : ($m['net_balance'] < 0 ? 'text-red-600' : 'text-secondary') }}">
-                                ৳{{ number_format($m['net_balance'], 2) }}
-                            </td>
-                            <td class="p-3 text-center">
-                                @if ($m['refund_amount'] > 0)
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                        Refund ৳{{ number_format($m['refund_amount'], 2) }}
-                                    </span>
-                                @elseif ($m['due_amount'] > 0)
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
-                                        Owes ৳{{ number_format($m['due_amount'], 2) }}
-                                    </span>
-                                @else
-                                    <span class="text-outline">Settled</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Emergency Form -->
-        <form action="{{ route('manager.tours.emergency-finish', $tour->id) }}" method="POST" class="space-y-4">
-            @csrf
-            <div>
-                <label class="text-xs font-bold uppercase tracking-wider text-red-900 block mb-1">
-                    Emergency Reason *
-                </label>
-                <input type="text" name="emergency_reason" required placeholder="e.g. Flash flooding in Sylhet / Road blockage / Medical emergency"
-                    class="w-full h-11 px-4 rounded-xl bg-red-50/50 text-sm border border-red-300 focus:border-red-600 outline-none">
-            </div>
-            <div>
-                <label class="text-xs font-bold uppercase tracking-wider text-on-surface block mb-1">
-                    Additional Notes (Optional)
-                </label>
-                <textarea name="notes" rows="2" placeholder="Describe instructions given to members, transport arrangements, etc."
-                    class="w-full p-3 rounded-xl bg-surface-container-low text-sm border border-outline-variant/30 focus:border-primary outline-none"></textarea>
-            </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <button type="button" onclick="closeModal('emergencyFinishModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-secondary">Cancel</button>
-                <button type="submit" class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md cursor-pointer">
-                    Confirm Emergency Finish
                 </button>
             </div>
         </form>

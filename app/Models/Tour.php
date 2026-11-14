@@ -107,7 +107,7 @@ class Tour extends Model
 
     public function isEmergencyFinished(): bool
     {
-        return $this->finish_type === 'emergency' || $this->status === 'emergency_finished';
+        return false;
     }
 
     public function syncDynamicStatus(): void

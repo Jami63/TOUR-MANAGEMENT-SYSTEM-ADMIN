@@ -13,7 +13,7 @@
                 Master Refunds Monitoring
             </h1>
             <p class="text-xs sm:text-sm text-secondary mt-1">
-                Super Admin audit of all refund calculations and physical refund statuses across normal and emergency-finished tours.
+                Super Admin audit of all refund calculations and physical refund statuses across completed tours.
             </p>
         </div>
         <div class="flex items-center gap-2">

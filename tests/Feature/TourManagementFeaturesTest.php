@@ -489,12 +489,12 @@ class TourManagementFeaturesTest extends TestCase
             $this->assertEquals('Settled', $financials['members'][$i]['settlement_status']);
         }
 
-        // Now test emergency finish action
-        $response = $this->actingAs($this->manager)->post("/manager/tours/{$tour->id}/emergency-finish", [
-            'emergency_reason' => 'Extreme weather forecast and flash floods',
-        ]);
-
-        $response->assertSessionHas('success');
+        // Now test emergency finish action via service
+        $service->emergencyFinishTour(
+            $tour,
+            $this->manager,
+            'Extreme weather forecast and flash floods'
+        );
 
         $tour->refresh();
         $this->assertEquals('emergency', $tour->finish_type);
@@ -563,8 +563,7 @@ class TourManagementFeaturesTest extends TestCase
             'end_date' => now()->addDays(3)->toDateString(),
             'estimated_budget' => 80000,
             'status' => 'completed',
-            'finish_type' => 'emergency',
-            'emergency_reason' => 'Landslide blocked roads',
+            'finish_type' => 'normal',
             'created_by' => $this->manager->id,
         ]);
 
@@ -597,13 +596,11 @@ class TourManagementFeaturesTest extends TestCase
         $response = $this->actingAs($this->superAdmin)->get('/admin/tours');
         $response->assertStatus(200);
         $response->assertSee('Sreemangal Tea Garden');
-        $response->assertSee('Emergency Finished');
 
         // 2. Super Admin can view Detailed Tour Audit (Read-Only)
         $response = $this->actingAs($this->superAdmin)->get("/admin/tours/{$tour->id}");
         $response->assertStatus(200);
         $response->assertSee('Super Admin Audit Mode (Read-Only)');
-        $response->assertSee('Landslide blocked roads');
         $response->assertSee('Microbus Rent');
         $response->assertSee('Naveed');
         // Ensure no mutating action buttons exist

@@ -24,8 +24,8 @@
         </div>
     </div>
 
-    <!-- 4 Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- 3 Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4">
         <!-- Total Tours -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
             <div>
@@ -55,22 +55,10 @@
             <div>
                 <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Finished Tours</span>
                 <span class="font-display text-2xl lg:text-3xl font-extrabold text-emerald-700 block mt-1">{{ $completedTours }}</span>
-                <span class="text-[11px] text-outline mt-0.5 block">Settled normally</span>
+                <span class="text-[11px] text-outline mt-0.5 block">Completed &amp; settled</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
                 <span class="material-symbols-outlined text-[26px]">task_alt</span>
-            </div>
-        </div>
-
-        <!-- Emergency Finished -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Emergency Finished</span>
-                <span class="font-display text-2xl lg:text-3xl font-extrabold text-red-600 block mt-1">{{ $emergencyTours }}</span>
-                <span class="text-[11px] text-outline mt-0.5 block">Ended early</span>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 shadow-sm">
-                <span class="material-symbols-outlined text-[26px]">crisis_alert</span>
             </div>
         </div>
     </div>
@@ -88,8 +76,7 @@
                 <option value="">All Statuses</option>
                 <option value="upcoming" {{ request('status') === 'upcoming' ? 'selected' : '' }}>Upcoming</option>
                 <option value="ongoing" {{ request('status') === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed (Normal)</option>
-                <option value="emergency_finished" {{ request('status') === 'emergency_finished' ? 'selected' : '' }}>Emergency Finished</option>
+                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed (Settled)</option>
             </select>
 
             <button type="submit" class="h-9 px-3.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-container transition-colors">
@@ -108,12 +95,7 @@
                 <div>
                     <!-- Top Status Row -->
                     <div class="flex items-center justify-between gap-2 mb-3">
-                        @if ($tour->isEmergencyFinished())
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700 flex items-center gap-1 border border-red-200">
-                                <span class="material-symbols-outlined text-[14px]">warning</span>
-                                Emergency Finished
-                            </span>
-                        @elseif ($tour->status === 'completed')
+                        @if ($tour->status === 'completed')
                             <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1 border border-emerald-200">
                                 <span class="material-symbols-outlined text-[14px]">check_circle</span>
                                 Finished

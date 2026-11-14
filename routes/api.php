@@ -39,7 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tours/{id}', [TourController::class, 'destroy']);
     Route::get('/tours/{id}/settlement-preview', [TourController::class, 'settlementPreview']);
     Route::post('/tours/{id}/finish', [TourController::class, 'finish']);
-    Route::post('/tours/{id}/emergency-finish', [TourController::class, 'emergencyFinish']);
     Route::get('/tours/{id}/refunds', [TourController::class, 'refunds']);
     Route::post('/refunds/{refundId}/status', [TourController::class, 'updateRefundStatus']);
 

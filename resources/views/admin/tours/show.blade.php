@@ -51,25 +51,13 @@
                         <span>{{ $tour->expenses->count() }} Logged Expenses</span>
                     </div>
                 </div>
-
-                @if ($tour->isEmergencyFinished())
-                    <div class="mt-4 p-3.5 rounded-xl bg-red-500/25 border border-red-400/40 text-xs text-red-100 flex items-start gap-2">
-                        <span class="material-symbols-outlined text-[18px] text-red-300 shrink-0">emergency</span>
-                        <div>
-                            <span class="font-bold text-white block">Emergency Terminated:</span>
-                            <span>{{ $tour->emergency_reason ?: 'No emergency reason was recorded.' }}</span>
-                        </div>
-                    </div>
-                @endif
             </div>
 
             <!-- Tour Status Display Card -->
             <div class="p-5 rounded-2xl bg-white/10 border border-white/15 text-center shrink-0 min-w-[220px]">
                 <span class="text-xs text-white/70 uppercase tracking-wider block font-semibold">Tour Status</span>
                 <span class="font-display text-xl font-bold text-white block mt-1">
-                    @if ($tour->isEmergencyFinished())
-                        <span class="text-red-300">Emergency Finished</span>
-                    @elseif ($tour->status === 'completed')
+                    @if ($tour->status === 'completed')
                         <span class="text-purple-300">Completed &amp; Settled</span>
                     @elseif ($tour->status === 'ongoing')
                         <span class="text-emerald-300">Ongoing</span>

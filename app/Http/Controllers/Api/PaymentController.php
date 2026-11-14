@@ -296,7 +296,7 @@ class PaymentController extends Controller
         if ($validated['amount'] > ($remainingExpense + 0.01)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Emergency Stop: Cannot collect more than the expense budget. Expense bill is ৳'.number_format($expenseTotal, 2).' and ৳'.number_format($alreadyCollected, 2).' has already been collected (Remaining limit: ৳'.number_format($remainingExpense, 2).').',
+                'message' => 'Cannot collect more than the expense budget. Expense bill is ৳'.number_format($expenseTotal, 2).' and ৳'.number_format($alreadyCollected, 2).' has already been collected (Remaining limit: ৳'.number_format($remainingExpense, 2).').',
             ], 422);
         }
 
@@ -307,7 +307,7 @@ class PaymentController extends Controller
             $remainingTourBudget = max(0.0, $tourBudget - $tourCollected);
             return response()->json([
                 'success' => false,
-                'message' => 'Emergency Stop: Total collected cannot exceed tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
+                'message' => 'Total collected cannot exceed tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
             ], 422);
         }
 
@@ -393,7 +393,7 @@ class PaymentController extends Controller
             $remainingTourBudget = max(0.0, $tourBudget - $tourCollected);
             return response()->json([
                 'success' => false,
-                'message' => 'Emergency Stop: Cannot collect more than the tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
+                'message' => 'Cannot collect more than the tour budget (৳'.number_format($tourBudget, 2).'). Already collected: ৳'.number_format($tourCollected, 2).' (Remaining allowance: ৳'.number_format($remainingTourBudget, 2).').',
             ], 422);
         }
 
@@ -542,7 +542,7 @@ class PaymentController extends Controller
             $remainingTourBudget = max(0.0, $tourBudget - ($tourCollected - (float) $payment->amount));
             return response()->json([
                 'success' => false,
-                'message' => 'Emergency Stop: Cannot update payment to exceed tour budget (৳'.number_format($tourBudget, 2).'). Remaining allowance: ৳'.number_format($remainingTourBudget, 2).'.',
+                'message' => 'Cannot update payment to exceed tour budget (৳'.number_format($tourBudget, 2).'). Remaining allowance: ৳'.number_format($remainingTourBudget, 2).'.',
             ], 422);
         }
 

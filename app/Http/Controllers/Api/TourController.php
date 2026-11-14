@@ -299,43 +299,6 @@ class TourController extends Controller
     }
 
     /**
-     * Emergency Finish Tour
-     */
-    public function emergencyFinish(Request $request, int $id, SettlementService $service): JsonResponse
-    {
-        $user = $request->user();
-        $tour = Tour::where('created_by', $user->id)->find($id);
-        if (! $tour) {
-            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
-        }
-
-        $validated = $request->validate([
-            'emergency_reason' => ['required', 'string'],
-            'notes' => ['nullable', 'string'],
-        ]);
-
-        try {
-            $financials = $service->emergencyFinishTour($tour, $user, $validated['emergency_reason'], $validated['notes'] ?? null);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tour finished early due to emergency',
-                'settlement' => $financials,
-            ]);
-        } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage() ?: 'Unable to finish tour.',
-            ], 500);
-        }
-    }
-
-    /**
      * Get tour refunds list (Requirement 7)
      */
     public function refunds(Request $request, int $id): JsonResponse

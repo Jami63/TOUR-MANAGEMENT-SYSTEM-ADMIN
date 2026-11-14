@@ -24,8 +24,8 @@
         </div>
     </div>
 
-    <!-- 4 Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- 3 Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4">
         <!-- Total Tours -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
             <div>
@@ -55,22 +55,10 @@
             <div>
                 <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Settled Tours</span>
                 <span class="font-display text-2xl lg:text-3xl font-extrabold text-emerald-700 block mt-1">{{ $completedTours }}</span>
-                <span class="text-[11px] text-outline mt-0.5 block">Normal finish &amp; settled</span>
+                <span class="text-[11px] text-outline mt-0.5 block">Completed &amp; settled</span>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
                 <span class="material-symbols-outlined text-[26px]">task_alt</span>
-            </div>
-        </div>
-
-        <!-- Emergency Finished -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-secondary uppercase tracking-wider">Emergency Finished</span>
-                <span class="font-display text-2xl lg:text-3xl font-extrabold text-red-600 block mt-1">{{ $emergencyTours }}</span>
-                <span class="text-[11px] text-outline mt-0.5 block">Terminated early</span>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 shadow-sm">
-                <span class="material-symbols-outlined text-[26px]">emergency</span>
             </div>
         </div>
     </div>
@@ -88,8 +76,7 @@
                 <option value="">All Statuses</option>
                 <option value="upcoming" {{ request('status') === 'upcoming' ? 'selected' : '' }}>Upcoming</option>
                 <option value="ongoing" {{ request('status') === 'ongoing' ? 'selected' : '' }}>Ongoing</option>
-                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed (Normal)</option>
-                <option value="emergency_finished" {{ request('status') === 'emergency_finished' ? 'selected' : '' }}>Emergency Finished</option>
+                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed (Settled)</option>
             </select>
 
             <select name="manager_id" onchange="this.form.submit()" class="h-9 px-3 rounded-lg bg-surface-container-low text-xs border border-outline-variant/30 text-secondary focus:outline-none">
@@ -171,12 +158,7 @@
                                     ৳{{ number_format($tour->total_collected ?? $tour->totalCollectedMoney(), 2) }}
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    @if($tour->isEmergencyFinished())
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-[10px] uppercase tracking-wide border border-red-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>
-                                            Emergency Finished
-                                        </span>
-                                    @elseif($tour->status === 'completed')
+                                    @if($tour->status === 'completed')
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px] uppercase tracking-wide border border-purple-200">
                                             <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span>
                                             Finished (Settled)

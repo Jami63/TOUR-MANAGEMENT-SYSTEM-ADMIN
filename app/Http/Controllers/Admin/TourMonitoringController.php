@@ -29,11 +29,7 @@ class TourMonitoringController extends Controller
         $query = Tour::with(['creator', 'destinations', 'members']);
 
         if ($request->filled('status')) {
-            if ($request->status === 'emergency_finished') {
-                $query->where('finish_type', 'emergency');
-            } else {
-                $query->where('status', $request->status);
-            }
+            $query->where('status', $request->status);
         }
 
         if ($request->filled('manager_id')) {
@@ -58,8 +54,7 @@ class TourMonitoringController extends Controller
         // Monitoring Summary Totals
         $totalTours = Tour::count();
         $activeTours = Tour::whereIn('status', ['upcoming', 'ongoing'])->count();
-        $completedTours = Tour::where('status', 'completed')->where('finish_type', 'normal')->count();
-        $emergencyTours = Tour::where('finish_type', 'emergency')->count();
+        $completedTours = Tour::where('status', 'completed')->count();
 
         return view('admin.tours.index', compact(
             'superAdmin',
@@ -67,8 +62,7 @@ class TourMonitoringController extends Controller
             'managers',
             'totalTours',
             'activeTours',
-            'completedTours',
-            'emergencyTours'
+            'completedTours'
         ));
     }
 

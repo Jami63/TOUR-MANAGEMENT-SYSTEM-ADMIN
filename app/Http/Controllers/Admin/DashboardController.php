@@ -16,7 +16,7 @@ class DashboardController extends Controller
 {
     /**
      * Super Admin Dashboard:
-     * High-level platform monitoring of all tours, finances, emergency finishes, and accounts.
+     * High-level platform monitoring of all tours, finances, and accounts.
      * Strictly Read-Only.
      */
     public function index(Request $request): View
@@ -31,8 +31,7 @@ class DashboardController extends Controller
         // 2. Platform Tour & Financial Statistics
         $totalTours = Tour::count();
         $activeTours = Tour::whereIn('status', ['upcoming', 'ongoing'])->count();
-        $completedTours = Tour::where('status', 'completed')->where('finish_type', 'normal')->count();
-        $emergencyTours = Tour::where('finish_type', 'emergency')->count();
+        $completedTours = Tour::where('status', 'completed')->count();
 
         $totalBudgetSum = Tour::sum('estimated_budget');
         $totalExpensesSum = Expense::sum('total_amount');
@@ -70,7 +69,6 @@ class DashboardController extends Controller
             'totalTours',
             'activeTours',
             'completedTours',
-            'emergencyTours',
             'totalBudgetSum',
             'totalExpensesSum',
             'totalCollectedSum',
