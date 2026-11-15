@@ -84,14 +84,20 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 7. Verification & Testing
+## 7. App Store & Google Play Store Listing Copy (Phase C - Step 1)
+- Added `STORE_LISTING_METADATA.md` documenting official store listing titles, short descriptions, 2,400-character feature descriptions, ASO keywords, and screenshot capture blueprint.
+- Aligned legal privacy and terms URLs to hosted endpoints (`/privacy-policy`, `/terms-of-service`).
+
+---
+
+## 8. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
 - Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)**.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 8. Next Planned Steps
+## 9. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.
