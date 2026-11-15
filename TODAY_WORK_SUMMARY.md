@@ -70,13 +70,21 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 5. Verification & Testing
+## 5. Release Keystore & Security Configuration (Phase B - Step 2)
+- Added Gradle automated release signing via `key.properties` in the Flutter mobile project.
+- Added strict `.gitignore` protection so private cryptographic keys (`*.jks`, `*.keystore`) and passwords can never leak to GitHub.
+- Created `key.properties.example` template with key generation instructions.
+
+---
+
+## 6. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
 - Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)**.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 6. Next Planned Steps
-1. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
-2. Point the mobile app's API base URL to the live domain once deployed.
+## 7. Next Planned Steps
+1. Mobile App Icons & Splash Screen Check (Phase B - Step 3).
+2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
+3. Point the mobile app's API base URL to the live domain once deployed.
