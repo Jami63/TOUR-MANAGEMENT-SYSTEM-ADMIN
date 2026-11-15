@@ -90,14 +90,22 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 8. Verification & Testing
+## 8. Database Migration to `safarfly`
+- Created new MySQL database `safarfly` with full `utf8mb4_unicode_ci` character encoding.
+- Migrated all existing 26 tables, users, tours, expenses, and payment records from old `safarflow` database with 100% data integrity.
+- Updated `.env` and `.env.example` configurations to `DB_DATABASE=safarfly`.
+- Cleared configuration cache and verified connection.
+
+---
+
+## 9. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
-- Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)**.
+- Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)** against the new `safarfly` database.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 9. Next Planned Steps
+## 10. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.
