@@ -63,13 +63,20 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 4. Verification & Testing
+## 4. Mobile Package ID & Store Identity Alignment (Phase B - Step 1)
+- Mobile application ID and iOS bundle identifier updated to **`com.safarfly.app`**.
+- Kotlin structure aligned with `com.safarfly.app`.
+- Cross-platform branding aligned to **SafarFly**.
+
+---
+
+## 5. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
 - Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)**.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 5. Next Planned Steps
+## 6. Next Planned Steps
 1. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 2. Point the mobile app's API base URL to the live domain once deployed.
