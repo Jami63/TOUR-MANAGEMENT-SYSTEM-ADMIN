@@ -106,14 +106,22 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 10. Verification & Testing
+## 10. Mobile Network Connectivity & Dynamic Server IP Fallback
+- Updated default backend server IP from `192.168.68.60` to active Wi-Fi address `192.168.68.62:8000`.
+- Enhanced mobile app login with dynamic candidate fallback to handle Wi-Fi router IP reallocations seamlessly.
+- Verified active user `2222081009uuja@gmail.com` login endpoint returning HTTP 200 OK and valid auth token.
+- Rebuilt optimized 23MB release APK at `C:\xampp\htdocs\safarflow_app\SafarFly.apk`.
+
+---
+
+## 11. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
 - Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)** against the new `safarfly` database.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 11. Next Planned Steps
+## 12. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.
