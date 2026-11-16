@@ -121,14 +121,23 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 12. Verification & Testing
-- Ran `php -l` on all modified PHP files: **0 syntax errors**.
-- Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)** against the new `safarfly` database.
-- Checked `php artisan route:list`: All 75 routes compile cleanly.
+## 12. Traveler Directory API (`GET /api/travelers`)
+- **New Directory Endpoint:** Implemented `TourMemberController@directory` registered at `Route::get('/travelers', [TourMemberController::class, 'directory'])`.
+- **Complete Participant Roster:** Queries all enrolled members across tours accessible to the user, properly grouping both registered users (`user_id`) and non-registered guest participants (`name`, `email`, `phone`).
+- **Comprehensive Financial Metrics:** Aggregates `total_share`, `total_paid`, `total_pending`, `remaining_due`, and settlement status across tours.
+- **Automated Feature Test:** Added `test_traveler_directory_returns_all_enrolled_participants_including_guests` in `TourManagementFeaturesTest.php` ensuring all enrolled participants (including guest members without accounts) are accurately returned.
 
 ---
 
-## 13. Next Planned Steps
+## 13. Verification & Testing
+- Ran `php -l` on all modified PHP files: **0 syntax errors**.
+- Ran `php artisan test`: **23 passed out of 23 tests (100% green, 164 assertions)**.
+- Checked `php artisan route:list`: All 76 routes compile cleanly.
+- Tested `GET /api/travelers` with real database data: Accurately returned all 10 participants.
+
+---
+
+## 14. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.

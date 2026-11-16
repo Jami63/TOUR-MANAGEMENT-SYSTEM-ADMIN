@@ -272,4 +272,116 @@ class TourMemberController extends Controller
             'users' => $users,
         ]);
     }
+
+    /**
+     * Traveler Directory: Returns all unique travelers enrolled across tours
+     * accessible to the authenticated user (Requirement: All tour participants visible in Directory).
+     */
+    public function directory(Request $request): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        // Get all tours accessible to the user:
+        // As a manager, tours created by this user or where they are a member.
+        // For admin, all tours.
+        $tourIds = Tour::query()
+            ->when($currentUser->role !== 'admin', function ($q) use ($currentUser) {
+                $q->where('created_by', $currentUser->id)
+                    ->orWhereHas('members', fn ($mq) => $mq->where('user_id', $currentUser->id));
+            })
+            ->pluck('id');
+
+        $members = TourMember::whereIn('tour_id', $tourIds)
+            ->with(['user', 'expenseShares', 'payments'])
+            ->get();
+
+        // Group members by identity:
+        // 1. By user_id if present
+        // 2. By email if present
+        // 3. By phone if present
+        // 4. By lowercase name
+        // 5. By member id
+        $grouped = [];
+
+        foreach ($members as $member) {
+            $key = null;
+            if ($member->user_id) {
+                $key = 'user_'.$member->user_id;
+            } elseif (! empty($member->email)) {
+                $key = 'email_'.strtolower(trim($member->email));
+            } elseif (! empty($member->phone)) {
+                $key = 'phone_'.trim($member->phone);
+            } elseif (! empty($member->name)) {
+                $key = 'name_'.strtolower(trim($member->name));
+            } else {
+                $key = 'member_'.$member->id;
+            }
+
+            $totalShare = (float) $member->expenseShares->sum('share_amount');
+            $totalPaid = (float) $member->totalPaidAmount();
+            $totalPending = (float) \App\Models\Payment::where(function ($q) use ($member) {
+                $q->where('tour_member_id', $member->id)
+                    ->orWhereHas('share', fn ($sq) => $sq->where('tour_member_id', $member->id));
+            })->where('status', 'pending')->sum('amount');
+
+            if (! isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'id' => $member->id,
+                    'user_id' => $member->user_id ?? 0,
+                    'full_name' => $member->display_name,
+                    'email' => $member->display_email ?? '',
+                    'phone' => $member->display_phone ?? '',
+                    'profile_picture' => $member->user?->profile_picture,
+                    'tour_role' => $member->tour_role,
+                    'status' => $member->status,
+                    'joined_at' => $member->joined_at?->format('d M, Y') ?? $member->created_at?->format('d M, Y'),
+                    'total_share' => 0.0,
+                    'total_paid' => 0.0,
+                    'total_pending' => 0.0,
+                    'tours_count' => 0,
+                ];
+            }
+
+            $grouped[$key]['total_share'] += $totalShare;
+            $grouped[$key]['total_paid'] += $totalPaid;
+            $grouped[$key]['total_pending'] += $totalPending;
+            $grouped[$key]['tours_count'] += 1;
+
+            if ($member->tour_role === 'manager') {
+                $grouped[$key]['tour_role'] = 'manager';
+            }
+        }
+
+        $travelers = array_values(array_map(function ($item) {
+            $remainingDue = max(0.0, round($item['total_share'] - $item['total_paid'], 2));
+            $netBalance = round($item['total_paid'] - $item['total_share'], 2);
+            $refundAmount = $netBalance > 0 ? $netBalance : 0.0;
+            $dueAmount = $netBalance < 0 ? abs($netBalance) : 0.0;
+
+            $settlementStatus = 'Due';
+            if ($item['total_share'] > 0 && $remainingDue <= 0.001) {
+                $settlementStatus = 'Settled';
+            } elseif ($item['total_paid'] > 0 && $item['total_share'] > 0) {
+                $settlementStatus = 'Partial';
+            } elseif ($item['total_paid'] > 0 && $item['total_share'] == 0) {
+                $settlementStatus = 'Advance Paid';
+            } elseif ($item['total_share'] == 0) {
+                $settlementStatus = 'Joined';
+            }
+
+            $item['remaining_due'] = $remainingDue;
+            $item['net_balance'] = $netBalance;
+            $item['refund_amount'] = $refundAmount;
+            $item['due_amount'] = $dueAmount;
+            $item['settlement_status'] = $settlementStatus;
+
+            return $item;
+        }, $grouped));
+
+        return response()->json([
+            'success' => true,
+            'travelers' => $travelers,
+            'total_travelers' => count($travelers),
+        ]);
+    }
 }

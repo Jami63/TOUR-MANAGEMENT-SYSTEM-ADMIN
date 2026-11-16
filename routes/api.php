@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tours/{tourId}/members', [TourMemberController::class, 'index']);
     Route::post('/tours/{tourId}/members', [TourMemberController::class, 'store']);
     Route::delete('/tours/{tourId}/members/{memberId}', [TourMemberController::class, 'destroy']);
+    Route::get('/travelers', [TourMemberController::class, 'directory']);
 
     // Tour Backpack Checklist API (Category-wise dynamic checklist)
     Route::get('/tours/{tourId}/backpack-items', [TourBackpackController::class, 'index']);

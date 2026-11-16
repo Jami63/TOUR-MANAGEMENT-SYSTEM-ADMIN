@@ -621,4 +621,68 @@ class TourManagementFeaturesTest extends TestCase
         $response = $this->actingAs($this->superAdmin)->get('/admin/financials/refunds');
         $response->assertStatus(200);
     }
+
+    /**
+     * Requirement: Traveler Directory returns all enrolled participants across tours,
+     * including non-registered guests without user accounts.
+     */
+    public function test_traveler_directory_returns_all_enrolled_participants_including_guests(): void
+    {
+        $tour = Tour::create([
+            'tour_name' => 'Sylhet Adventure Tour',
+            'start_location' => 'Dhaka',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDays(3)->toDateString(),
+            'created_by' => $this->manager->id,
+            'status' => 'ongoing',
+        ]);
+
+        // Manager member (user_id = manager id)
+        TourMember::create([
+            'tour_id' => $tour->id,
+            'user_id' => $this->manager->id,
+            'tour_role' => 'manager',
+            'status' => 'joined',
+        ]);
+
+        // Guest member 1 (user_id = null)
+        TourMember::create([
+            'tour_id' => $tour->id,
+            'user_id' => null,
+            'name' => 'Siam',
+            'tour_role' => 'member',
+            'status' => 'joined',
+        ]);
+
+        // Guest member 2 (user_id = null)
+        TourMember::create([
+            'tour_id' => $tour->id,
+            'user_id' => null,
+            'name' => 'Sohan',
+            'tour_role' => 'member',
+            'status' => 'joined',
+        ]);
+
+        // Guest member 3 (user_id = null)
+        TourMember::create([
+            'tour_id' => $tour->id,
+            'user_id' => null,
+            'name' => 'Nahid',
+            'tour_role' => 'member',
+            'status' => 'joined',
+        ]);
+
+        $response = $this->actingAs($this->manager, 'sanctum')->getJson('/api/travelers');
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'total_travelers' => 4,
+            ]);
+
+        $names = collect($response->json('travelers'))->pluck('full_name')->all();
+        $this->assertContains($this->manager->full_name, $names);
+        $this->assertContains('Siam', $names);
+        $this->assertContains('Sohan', $names);
+        $this->assertContains('Nahid', $names);
+    }
 }
