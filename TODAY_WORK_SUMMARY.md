@@ -129,15 +129,29 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 13. Verification & Testing
-- Ran `php -l` on all modified PHP files: **0 syntax errors**.
-- Ran `php artisan test`: **23 passed out of 23 tests (100% green, 164 assertions)**.
-- Checked `php artisan route:list`: All 76 routes compile cleanly.
-- Tested `GET /api/travelers` with real database data: Accurately returned all 10 participants.
+## 13. Security QA & Bug Fix: Rejection of JSON Files and Raw JSON in Profile Photo Input Fields
+- **Security QA Finding:** Investigated whether JSON files are accepted in user input and upload fields, and whether accepting them constitutes an application bug.
+- **Finding Details:**
+  - In multipart file upload (`photo`): Laravel's validation rules (`image`, `mimes:jpeg,png,jpg,webp`) already rejected `.json` files with HTTP 422. This is correct and safe behavior.
+  - In "Photo URL" text input: A URL pointing to a `.json` file (`https://example.com/avatar.json`) or raw JSON text (>300 chars) was previously accepted because the URL validator did not enforce image file extensions, and long strings bypassed base64 checks!
+  - **Is accepting a JSON file a bug? YES!** Accepting a `.json` file/URL as an avatar caused broken image rendering in the mobile app (`ImageCodecException`) and polluted avatar storage with non-image files.
+- **Fix Implemented:**
+  - `AuthController@updateProfilePhoto`:
+    - Explicitly detects and rejects raw JSON structures (starting with `{` or `[` or passing `json_validate`) with HTTP 422.
+    - Strictly validates that external photo URLs point to recognized image extensions (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.svg`), rejecting `.json` URLs with HTTP 422.
+    - Validates binary base64 decoded payloads with `getimagesizefromstring` to ensure they are true image binaries (JPEG/PNG/WEBP), rejecting base64-encoded JSON or arbitrary text.
+- **Automated Feature Test:** Added `test_profile_photo_endpoint_rejects_json_files_and_json_urls` in `ApiTest.php` verifying HTTP 422 rejection of uploaded `.json` files, JSON URLs, and raw JSON strings.
 
 ---
 
-## 14. Next Planned Steps
+## 14. Verification & Testing
+- Ran `php -l` on all modified PHP files: **0 syntax errors**.
+- Ran `php artisan test`: **24 passed out of 24 tests (100% green, 171 assertions)**.
+- Checked `php artisan route:list`: All routes compile cleanly.
+
+---
+
+## 15. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.

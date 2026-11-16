@@ -235,32 +235,76 @@ class AuthController extends Controller
                 $photoUrl = url('uploads/profile_pictures/' . $filename);
             }
         } elseif ($request->filled('profile_picture')) {
-            $raw = $request->input('profile_picture');
-            if (str_starts_with($raw, 'data:image') || (strlen($raw) > 300 && !str_starts_with($raw, 'http'))) {
+            $raw = trim($request->input('profile_picture'));
+
+            // Reject raw JSON payloads (e.g. {"test": ...} or [{"test": ...}])
+            if (str_starts_with($raw, '{') || str_starts_with($raw, '[') || (json_validate($raw) && !filter_var($raw, FILTER_VALIDATE_URL))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'JSON files and raw JSON data are not accepted as profile photos. Please upload a valid image file (.jpg, .jpeg, .png, .webp).',
+                ], 422);
+            }
+
+            if (str_starts_with($raw, 'data:image')) {
                 // Decode base64 image data
-                $uploadDir = public_path('uploads/profile_pictures');
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
                 $clean = preg_replace('#^data:image/\w+;base64,#i', '', $raw);
-                $decoded = base64_decode($clean);
-                if ($decoded !== false) {
-                    $filename = 'profile_' . $user->id . '_' . Str::random(16) . '.jpg';
-                    file_put_contents($uploadDir . DIRECTORY_SEPARATOR . $filename, $decoded);
-                    $photoUrl = url('uploads/profile_pictures/' . $filename);
-                } else {
+                $decoded = base64_decode($clean, true);
+
+                if ($decoded === false) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Invalid image encoding provided.',
                     ], 422);
                 }
+
+                // Verify the decoded binary is genuinely an image (reject base64 encoded JSON/text)
+                $imgInfo = @getimagesizefromstring($decoded);
+                if ($imgInfo === false || ! in_array($imgInfo[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The provided data is not a valid image format. JSON and document files are not accepted.',
+                    ], 422);
+                }
+
+                $uploadDir = public_path('uploads/profile_pictures');
+                if (! file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $ext = match ($imgInfo[2]) {
+                    IMAGETYPE_PNG => 'png',
+                    IMAGETYPE_WEBP => 'webp',
+                    default => 'jpg',
+                };
+
+                $filename = 'profile_'.$user->id.'_'.Str::random(16).'.'.$ext;
+                file_put_contents($uploadDir.DIRECTORY_SEPARATOR.$filename, $decoded);
+                $photoUrl = url('uploads/profile_pictures/'.$filename);
             } else {
                 if (filter_var($raw, FILTER_VALIDATE_URL)) {
+                    $parsedPath = parse_url($raw, PHP_URL_PATH);
+                    $ext = strtolower(pathinfo($parsedPath ?? '', PATHINFO_EXTENSION));
+
+                    // Reject .json, .txt, .pdf, or non-image URLs
+                    if ($ext === 'json' || str_ends_with(strtolower($raw), '.json')) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'JSON files are not accepted as profile photos. The URL must point to a valid image (.jpg, .jpeg, .png, .webp).',
+                        ], 422);
+                    }
+
+                    if (! empty($ext) && ! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'The photo URL must point to an image file (.jpg, .jpeg, .png, .webp). Files with extension .'.$ext.' are not accepted.',
+                        ], 422);
+                    }
+
                     $photoUrl = $raw;
                 } else {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid image URL provided.',
+                        'message' => 'Invalid image URL or encoding provided. JSON files are not accepted.',
                     ], 422);
                 }
             }
