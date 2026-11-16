@@ -114,14 +114,21 @@ Per user instruction, the early emergency termination flow was removed from both
 
 ---
 
-## 11. Verification & Testing
+## 11. Mobile App Home Wi-Fi IP Alignment (`192.168.0.108`) & Release APK
+- Aligned mobile app default API endpoint to active home Wi-Fi address `http://192.168.0.108:8000/api`.
+- Verified backend server active and responding on `192.168.0.108:8000`.
+- Deployed freshly built 23MB release APK at `C:\xampp\htdocs\safarflow_app\SafarFly.apk`.
+
+---
+
+## 12. Verification & Testing
 - Ran `php -l` on all modified PHP files: **0 syntax errors**.
 - Ran `php artisan test`: **22 passed out of 22 tests (100% green, 158 assertions)** against the new `safarfly` database.
 - Checked `php artisan route:list`: All 75 routes compile cleanly.
 
 ---
 
-## 12. Next Planned Steps
+## 13. Next Planned Steps
 1. Mobile Production Release Bundle Build (Phase C).
 2. Guide user through production web hosting setup (cPanel / VPS, PHP 8.2+, MySQL, SSL/HTTPS).
 3. Point the mobile app's API base URL to the live domain once deployed.
