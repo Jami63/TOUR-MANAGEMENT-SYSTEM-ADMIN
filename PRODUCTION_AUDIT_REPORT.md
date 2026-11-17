@@ -29,10 +29,10 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
 ### Overall Status: **Conditionally Ready – Requires P0/P1 Fixes**
 
 #### P0 (Critical Blockers):
-- **P0-1: Hardcoded Local IP Fallback (`http://192.168.0.108:8000/api`)**:
-  - *Location:* `lib/core/constants.dart` (lines 125-130).
-  - *Detail:* If a user installs the app from Google Play on 4G/5G, `defaultBaseUrl` points to `192.168.0.108`. The app will be completely unable to reach the server.
-  - *Action:* Must deploy backend to live domain (e.g. `https://api.safarfly.com/api`) and make production HTTPS domain the default.
+- **P0-1: [RESOLVED ✅] Hardcoded Local IP Fallback (`http://192.168.0.108:8000/api`)**:
+  - *Status:* **FIXED** (November 17, 2026)
+  - *Location:* `lib/core/constants.dart`, `lib/core/api_service.dart`, `lib/widgets/server_config_modal.dart`.
+  - *Resolution:* Implemented smart environment-aware resolution: in release builds (`kReleaseMode`), `AppConfig.defaultBaseUrl` automatically defaults to the secure production HTTPS cloud API (`https://api.safarfly.com/api`). In debug/local testing, it cleanly falls back to local dev servers (`http://192.168.0.108:8000/api`). CI/CD builds can also override via `--dart-define=API_BASE_URL=...`. Candidate Wi-Fi auto-fallback is guarded to run only in debug mode so production network requests never stall. Unit tests added and passing (20/20).
 
 #### P1 (Major Issues):
 - **P1-1: Missing Production Keystore (`key.properties`)**:
