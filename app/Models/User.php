@@ -23,6 +23,9 @@ class User extends Authenticatable
         'role',
         'profile_picture',
         'notifications_enabled',
+        'subscription_tier',
+        'subscription_plan',
+        'subscription_expires_at',
     ];
 
     protected $hidden = [
@@ -36,6 +39,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notifications_enabled' => 'boolean',
+            'subscription_expires_at' => 'datetime',
         ];
     }
 
@@ -47,6 +51,36 @@ class User extends Authenticatable
     public function isManager(): bool
     {
         return $this->role === 'manager';
+    }
+
+    public function isPro(): bool
+    {
+        if (strtolower($this->subscription_tier ?? '') !== 'pro') {
+            return false;
+        }
+
+        return $this->subscription_expires_at === null || $this->subscription_expires_at->isFuture();
+    }
+
+    public function toApiArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'full_name' => $this->full_name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'role' => $this->role,
+            'profile_picture' => $this->profile_picture,
+            'subscription_tier' => $this->subscription_tier ?? 'free',
+            'subscription_plan' => $this->subscription_plan,
+            'subscription_expires_at' => $this->subscription_expires_at?->toIso8601String(),
+            'is_pro' => $this->isPro(),
+        ];
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
     }
 
     /**

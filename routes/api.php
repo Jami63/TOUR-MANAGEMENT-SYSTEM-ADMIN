@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\MemberSummaryController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\TourBackpackController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourMemberController;
@@ -77,4 +78,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Member Personal Expense & Dues Summary
     Route::get('/tours/{tourId}/my-summary', [MemberSummaryController::class, 'myTourSummary']);
+
+    // In-App Purchase & Pro Subscription API
+    Route::get('/subscription/plans', [SubscriptionController::class, 'plans']);
+    Route::get('/subscription/status', [SubscriptionController::class, 'status']);
+    Route::post('/subscription/subscribe', [SubscriptionController::class, 'subscribe']);
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel']);
 });

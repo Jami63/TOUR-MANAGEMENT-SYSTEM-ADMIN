@@ -79,14 +79,7 @@ class AuthController extends Controller
                 'success' => true,
                 'message' => 'Account already verified. Welcome!',
                 'token' => $token,
-                'user' => [
-                    'id' => $existing->id,
-                    'full_name' => $existing->full_name,
-                    'email' => $existing->email,
-                    'phone' => $existing->phone,
-                    'role' => $existing->role,
-                    'profile_picture' => $existing->profile_picture,
-                ],
+                'user' => $existing->toApiArray(),
             ]);
         }
 
@@ -105,14 +98,7 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Email verified and account created successfully!',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'profile_picture' => $user->profile_picture,
-            ],
+            'user' => $user->toApiArray(),
         ], 201);
     }
 
@@ -159,14 +145,7 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Login successful',
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'profile_picture' => $user->profile_picture,
-            ],
+            'user' => $user->toApiArray(),
         ]);
     }
 
@@ -179,14 +158,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'profile_picture' => $user->profile_picture,
-            ],
+            'user' => $user->toApiArray(),
         ]);
     }
 
@@ -204,14 +176,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profile picture cleared successfully',
-                'user' => [
-                    'id' => $user->id,
-                    'full_name' => $user->full_name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'role' => $user->role,
-                    'profile_picture' => null,
-                ],
+                'user' => $user->toApiArray(),
             ]);
         }
 
@@ -323,14 +288,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profile picture updated successfully',
-            'user' => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'profile_picture' => $user->profile_picture,
-            ],
+            'user' => $user->toApiArray(),
         ]);
     }
 
@@ -346,14 +304,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profile picture cleared successfully',
-            'user' => [
-                'id' => $user->id,
-                'full_name' => $user->full_name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'role' => $user->role,
-                'profile_picture' => null,
-            ],
+            'user' => $user->toApiArray(),
         ]);
     }
 
