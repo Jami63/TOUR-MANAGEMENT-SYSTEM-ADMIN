@@ -99,4 +99,43 @@ class SubscriptionApiTest extends TestCase
             'status' => 'cancelled',
         ]);
     }
+
+    public function test_invalid_plan_id_fails_validation(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/subscription/subscribe', [
+            'plan_id' => 'invalid_plan_xyz',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['plan_id']);
+    }
+
+    public function test_unauthenticated_access_is_rejected(): void
+    {
+        $response = $this->getJson('/api/subscription/status');
+
+        $response->assertStatus(401);
+    }
+
+    public function test_subscribing_when_already_active_stacks_and_extends_future_expiration(): void
+    {
+        $futureDate = now()->addDays(20);
+        $user = User::factory()->create([
+            'subscription_tier' => 'pro',
+            'subscription_plan' => 'pro_monthly',
+            'subscription_expires_at' => $futureDate,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')->postJson('/api/subscription/subscribe', [
+            'plan_id' => 'pro_monthly',
+        ]);
+
+        $response->assertOk();
+        $user->refresh();
+
+        // Must be extended from the 20-day future date by 1 month (~50 days from now), NOT from today
+        $this->assertTrue($user->subscription_expires_at->gt(now()->addDays(45)));
+    }
 }
