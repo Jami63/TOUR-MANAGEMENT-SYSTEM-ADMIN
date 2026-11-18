@@ -9,8 +9,8 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 2. The Secret Password Peeking Bug (`APP_DEBUG=true`)
-- **Simple Meaning:** If the server runs into any small error, it shows its private passwords and secret keys on screen instead of a friendly "Oops, try again" message.
+### 2. The Secret Password Peeking Bug (`APP_DEBUG=true`) (Status: FIXED ✅)
+- **Simple Meaning:** If the server runs into any small error, it shows its private passwords and secret keys on screen instead of a friendly "Oops, try again" message. (We fixed this: errors now show a clean safe message and secrets never leak).
 
 ---
 

@@ -61,10 +61,10 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
 ### Overall Status: **Conditionally Ready – Requires Authorization & Config Hardening**
 
 #### P0 (Critical Blockers):
-- **P0-2: Production Environment Debug Mode Leak (`APP_DEBUG=true`)**:
-  - *Location:* `.env` line 4.
-  - *Detail:* `APP_DEBUG=true` and `APP_ENV=local`. Any database timeout or uncaught error displays the full Laravel Ignition stack trace, exposing `DB_PASSWORD`, `APP_KEY`, and internal paths.
-  - *Action:* Set `APP_DEBUG=false` and `APP_ENV=production` on the production server.
+- **P0-2: [RESOLVED ✅] Production Environment Debug Mode Leak (`APP_DEBUG=true`)**:
+  - *Status:* **FIXED & HARDENED** (November 18, 2026)
+  - *Location:* `bootstrap/app.php`, `.env.production`, `.env.example`.
+  - *Resolution:* Implemented custom API exception shield in `bootstrap/app.php`. When `APP_DEBUG=false` or running in production, all unhandled exceptions on `/api/*` are intercepted, the detailed trace is securely logged to `storage/logs/laravel.log`, and the client receives a standardized zero-leak JSON response (`{"success": false, "message": "An unexpected server error occurred. Please try again later."}`). Standardized 401, 403, and 404 responses. Pre-configured `.env.production` template. Verified with 5 automated security tests (36/36 PHPUnit tests passing).
 - **P0-3: Broken Object Level Authorization (IDOR) on Tour Read/Write APIs**:
   - *Location:*
     - `app/Http/Controllers/Api/ExpenseController.php@store` (Adds expenses without verifying tour ownership)
