@@ -19,8 +19,8 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 4. Missing Official Android Play Store Stamp (Keystore Key)
-- **Simple Meaning:** The Android app is signed with a practice beginner stamp. Google Play will reject the app until we give it an official release stamp (`key.properties`).
+### 4. Missing Official Android Play Store Stamp (Keystore Key) (Status: FIXED ✅)
+- **Simple Meaning:** The Android app was signed with a practice beginner stamp. Google Play rejects beginner stamps. (We fixed this: we created SafarFly's official 2048-bit production release stamp valid until year 2054, configured `key.properties`, and stamped the release APK with SafarFly Ltd's official certificate).
 
 ---
 

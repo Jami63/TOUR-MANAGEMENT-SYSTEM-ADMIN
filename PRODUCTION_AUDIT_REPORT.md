@@ -35,9 +35,10 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
   - *Resolution:* Implemented smart environment-aware resolution: in release builds (`kReleaseMode`), `AppConfig.defaultBaseUrl` automatically defaults to the secure production HTTPS cloud API (`https://api.safarfly.com/api`). In debug/local testing, it cleanly falls back to local dev servers (`http://192.168.0.108:8000/api`). CI/CD builds can also override via `--dart-define=API_BASE_URL=...`. Candidate Wi-Fi auto-fallback is guarded to run only in debug mode so production network requests never stall. Unit tests added and passing (20/20).
 
 #### P1 (Major Issues):
-- **P1-1: Missing Production Keystore (`key.properties`)**:
-  - *Location:* `android/app/build.gradle` (lines 50-54).
-  - *Detail:* `android/key.properties` does not exist. Release builds fall back to debug signing (`signingConfigs.debug`). Google Play Console strictly rejects debug-signed `.aab` bundles.
+- **P1-1: [RESOLVED ✅] Missing Production Keystore (`key.properties`)**:
+  - *Status:* **FIXED & HARDENED** (November 18, 2026)
+  - *Location:* `android/app/build.gradle`, `android/key.properties`, `android/key.properties.example`, `android/app/safarfly-release-key.jks`.
+  - *Resolution:* Generated official 2048-bit RSA production release keystore (`safarfly-release-key.jks`) valid for 10,000 days (until 2054) under `CN=SafarFly Release Manager, OU=Mobile Engineering, O=SafarFly`. Configured `android/key.properties` and updated `android/app/build.gradle` with robust resolution for release signing. Verified generated release APK signature (`CN=SafarFly Release Manager`) via `keytool -printcert -jarfile`, confirming zero debug certificate. Rebuilt production release APK (`SafarFly.apk`, 23.1 MB). Keystore and secret properties secured in `.gitignore`.
 - **P1-2: Missing In-App Privacy Policy & Terms Links**:
   - *Location:* `lib/screens/login_screen.dart`, `lib/screens/register_screen.dart`, `lib/screens/home_screen.dart`.
   - *Detail:* Apple App Store Guideline 5.1.1 and Google Play User Data policies mandate clickable in-app privacy policy links. Missing in-app links trigger automatic store review rejections.
