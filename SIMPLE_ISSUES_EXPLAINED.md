@@ -14,8 +14,8 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 3. Strangers Touching Another Tour’s Money (Missing Lock)
-- **Simple Meaning:** One tour leader could accidentally view or change another tour leader's private trip bills because the server was not double-checking who owned the trip.
+### 3. Strangers Touching Another Tour’s Money (Missing Lock) (Status: FIXED ✅)
+- **Simple Meaning:** One tour leader could accidentally view or change another tour leader's private trip bills because the server was not double-checking who owned the trip. (We fixed this: every tour, expense, payment, member list, and backpack checklist is now guarded with strict locks; only the creator or members can view or manage their own tours).
 
 ---
 

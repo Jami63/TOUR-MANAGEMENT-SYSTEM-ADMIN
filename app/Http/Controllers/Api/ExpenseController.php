@@ -16,8 +16,17 @@ class ExpenseController extends Controller
     /**
      * List all expenses for a tour
      */
-    public function index(int $tourId): JsonResponse
+    public function index(Request $request, int $tourId): JsonResponse
     {
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to tour expenses'], 403);
+        }
+
         $expenses = Expense::where('tour_id', $tourId)
             ->with(['category', 'addedBy', 'shares.tourMember.user'])
             ->latest('expense_date')
@@ -54,6 +63,10 @@ class ExpenseController extends Controller
         $tour = Tour::with('members')->find($tourId);
         if (! $tour) {
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canManage($user)) {
+            return response()->json(['success' => false, 'message' => 'Only the Tour Manager can add expenses to this tour'], 403);
         }
 
         $validated = $request->validate([

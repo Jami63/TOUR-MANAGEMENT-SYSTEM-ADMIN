@@ -1,0 +1,11 @@
+fix(security): resolve issue #3 broken object-level authorization (IDOR)
+
+- Enforce strict object-level authorization across all tour resources
+- Add canAccess and canManage helper methods to Tour model
+- Protect ExpenseController store and index against unauthorized modifications and reads
+- Restrict TourController show and settlementPreview to verified participants and creator
+- Guard PaymentController getTourPayments and show against IDOR data exposure
+- Eliminate flawed role check in TourMemberController store and destroy
+- Secure all 5 TourBackpackController checklist endpoints against non-participants
+- Add tests/Feature/TourAuthorizationSecurityTest.php (9 tests, 68 assertions, 100% pass)
+- Update PRODUCTION_AUDIT_REPORT.md, SIMPLE_ISSUES_EXPLAINED.md, and add ISSUE_3_TEST_REPORT.md

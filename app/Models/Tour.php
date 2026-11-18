@@ -144,4 +144,24 @@ class Tour extends Model
                 });
         })->where('status', 'verified')->sum('amount');
     }
+
+    /**
+     * Determine if a user has permission to view this tour (Creator, Member, or Super Admin).
+     */
+    public function canAccess(User $user): bool
+    {
+        if ($user->isSuperAdmin() || $this->created_by === $user->id) {
+            return true;
+        }
+
+        return $this->members()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Determine if a user has permission to manage/edit this tour (Creator or Super Admin).
+     */
+    public function canManage(User $user): bool
+    {
+        return $user->isSuperAdmin() || $this->created_by === $user->id;
+    }
 }

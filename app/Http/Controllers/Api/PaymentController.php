@@ -225,8 +225,9 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Payment not found'], 404);
         }
 
-        $isOwner = $payment->share?->tourMember?->user_id === $user->id;
-        $isManager = $payment->share?->expense?->tour?->created_by === $user->id || $user->role === 'manager';
+        $tour = $payment->tour ?? $payment->share?->expense?->tour;
+        $isOwner = ($payment->share?->tourMember?->user_id === $user->id) || ($payment->tourMember?->user_id === $user->id);
+        $isManager = ($tour && $tour->created_by === $user->id) || $user->isSuperAdmin();
 
         if (! $isOwner && ! $isManager) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
@@ -267,7 +268,7 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && !$currentUser->isSuperAdmin()) {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Only the Tour Manager can record payments'], 403);
         }
 
@@ -368,7 +369,7 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && !$currentUser->isSuperAdmin()) {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Only the Tour Manager can record payments'], 403);
         }
 
@@ -455,6 +456,10 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to tour payments'], 403);
+        }
+
         $payments = Payment::with(['tourMember', 'share.expense', 'receivedBy'])
             ->where(function ($q) use ($tourId) {
                 $q->where('tour_id', $tourId)
@@ -510,7 +515,7 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && !$currentUser->isSuperAdmin()) {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Only the Tour Manager can edit payments'], 403);
         }
 
@@ -607,7 +612,7 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && !$currentUser->isSuperAdmin()) {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Only the Tour Manager can delete payments'], 403);
         }
 

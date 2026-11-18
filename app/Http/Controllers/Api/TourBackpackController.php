@@ -17,7 +17,14 @@ class TourBackpackController extends Controller
      */
     public function index(Request $request, int $tourId): JsonResponse
     {
-        $tour = Tour::findOrFail($tourId);
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to backpack checklist'], 403);
+        }
 
         // Normalize tour's assigned categories
         $tourCategories = $tour->categories ?? [];
@@ -144,12 +151,20 @@ class TourBackpackController extends Controller
      */
     public function store(Request $request, int $tourId): JsonResponse
     {
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to backpack checklist'], 403);
+        }
+
         $request->validate([
             'category' => ['required', 'string', 'max:100'],
             'item_name' => ['required', 'string', 'max:255'],
         ]);
 
-        $tour = Tour::findOrFail($tourId);
         $category = trim($request->category);
 
         $item = TourBackpackItem::create([
@@ -170,9 +185,22 @@ class TourBackpackController extends Controller
     /**
      * Toggle the packed status of a backpack item.
      */
-    public function toggle(int $tourId, int $itemId): JsonResponse
+    public function toggle(Request $request, int $tourId, int $itemId): JsonResponse
     {
-        $item = TourBackpackItem::where('tour_id', $tourId)->findOrFail($itemId);
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to backpack checklist'], 403);
+        }
+
+        $item = TourBackpackItem::where('tour_id', $tourId)->find($itemId);
+        if (! $item) {
+            return response()->json(['success' => false, 'message' => 'Backpack item not found'], 404);
+        }
+
         $item->is_packed = ! $item->is_packed;
         $item->save();
 
@@ -186,9 +214,22 @@ class TourBackpackController extends Controller
     /**
      * Delete a backpack item (default or custom).
      */
-    public function destroy(int $tourId, int $itemId): JsonResponse
+    public function destroy(Request $request, int $tourId, int $itemId): JsonResponse
     {
-        $item = TourBackpackItem::where('tour_id', $tourId)->findOrFail($itemId);
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to backpack checklist'], 403);
+        }
+
+        $item = TourBackpackItem::where('tour_id', $tourId)->find($itemId);
+        if (! $item) {
+            return response()->json(['success' => false, 'message' => 'Backpack item not found'], 404);
+        }
+
         $item->delete();
 
         return response()->json([
@@ -202,6 +243,15 @@ class TourBackpackController extends Controller
      */
     public function resetCategory(Request $request, int $tourId): JsonResponse
     {
+        $tour = Tour::find($tourId);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to backpack checklist'], 403);
+        }
+
         $request->validate([
             'category' => ['required', 'string', 'max:100'],
         ]);

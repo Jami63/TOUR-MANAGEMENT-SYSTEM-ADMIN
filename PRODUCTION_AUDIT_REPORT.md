@@ -65,15 +65,16 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
   - *Status:* **FIXED & HARDENED** (November 18, 2026)
   - *Location:* `bootstrap/app.php`, `.env.production`, `.env.example`.
   - *Resolution:* Implemented custom API exception shield in `bootstrap/app.php`. When `APP_DEBUG=false` or running in production, all unhandled exceptions on `/api/*` are intercepted, the detailed trace is securely logged to `storage/logs/laravel.log`, and the client receives a standardized zero-leak JSON response (`{"success": false, "message": "An unexpected server error occurred. Please try again later."}`). Standardized 401, 403, and 404 responses. Pre-configured `.env.production` template. Verified with 5 automated security tests (36/36 PHPUnit tests passing).
-- **P0-3: Broken Object Level Authorization (IDOR) on Tour Read/Write APIs**:
+- **P0-3: [RESOLVED ✅] Broken Object Level Authorization (IDOR) on Tour Read/Write APIs**:
+  - *Status:* **FIXED & HARDENED** (November 18, 2026)
   - *Location:*
-    - `app/Http/Controllers/Api/ExpenseController.php@store` (Adds expenses without verifying tour ownership)
-    - `app/Http/Controllers/Api/ExpenseController.php@index` (Views expenses without verifying membership)
-    - `app/Http/Controllers/Api/TourController.php@show` (Returns tour details to any logged-in user)
-    - `app/Http/Controllers/Api/TourController.php@settlementPreview` (Returns settlement calculations to any user)
-    - `app/Http/Controllers/Api/PaymentController.php@getTourPayments` (Returns payment history to any user)
-  - *Detail:* These endpoints do not verify whether the authenticated user owns or belongs to the requested `tour_id`.
-  - *Action:* Implement authorization checks (`$tour->created_by === $user->id || $tour->members()->where('user_id', $user->id)->exists() || $user->isSuperAdmin()`).
+    - `app/Models/Tour.php` (Added `canAccess(User $user)` and `canManage(User $user)`)
+    - `app/Http/Controllers/Api/ExpenseController.php@store` & `@index`
+    - `app/Http/Controllers/Api/TourController.php@show` & `@settlementPreview`
+    - `app/Http/Controllers/Api/PaymentController.php@getTourPayments` & `@show`
+    - `app/Http/Controllers/Api/TourMemberController.php@index`, `@store` & `@destroy`
+    - `app/Http/Controllers/Api/TourBackpackController.php` (All 5 endpoints locked down)
+  - *Resolution:* Enforced strict multi-tenant authorization guards across all read and write APIs. Only the tour creator (manager) or verified participants can read tour details, financial breakdown, expenses, payments, members, and backpack checklist. Mutating operations (adding expenses, recording payments, adding/removing members) are strictly restricted to the tour creator or Super Admin. Flawed condition in `TourMemberController` that previously allowed arbitrary managers to tamper with other tours was completely eliminated. Verified with 9 new automated security tests (45/45 PHPUnit tests passing).
 
 #### P1 (Major Issues):
 - **P1-4: Registration Email OTP Service Dependency**:
@@ -92,7 +93,7 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
 | **Account Deletion** | 🟢 PASS | Fully compliant with Apple Guideline 5.1.1(v) & Google Play rules. |
 | **Input File Upload Security** | 🟢 PASS | Profile photo upload strictly validates image MIME types and rejects JSON files/data. |
 | **SQL Injection** | 🟢 PASS | Eloquent ORM & PDO prepared statements used across all controllers. |
-| **Object Authorization (IDOR)** | 🔴 FAIL (P0) | Unchecked tour ownership on `ExpenseController@store` and `TourController@show`. |
+| **Object Authorization (IDOR)** | 🟢 PASS | Strict object-level ownership checks enforced on all Tour, Expense, Member, Payment, and Backpack APIs. |
 | **Credential / Debug Exposure** | 🔴 FAIL (P0) | `APP_DEBUG=true` in local configuration. |
 
 ---

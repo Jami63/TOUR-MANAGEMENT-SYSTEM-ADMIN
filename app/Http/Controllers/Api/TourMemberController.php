@@ -24,6 +24,10 @@ class TourMemberController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to tour members'], 403);
+        }
+
         $members = TourMember::where('tour_id', $tourId)
             ->with(['user', 'expenseShares.payments'])
             ->get();
@@ -102,7 +106,7 @@ class TourMemberController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Only the Tour Manager can add participants'], 403);
         }
 
@@ -197,7 +201,7 @@ class TourMemberController extends Controller
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
         }
 
-        if ($tour->created_by !== $currentUser->id && $currentUser->role !== 'manager') {
+        if (! $tour->canManage($currentUser)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 

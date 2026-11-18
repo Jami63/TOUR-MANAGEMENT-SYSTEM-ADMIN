@@ -224,13 +224,17 @@ class TourController extends Controller
     /**
      * Get specific tour details
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $tour = Tour::with(['destinations', 'members.user', 'expenses.category', 'timeline'])
             ->find($id);
 
         if (! $tour) {
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to tour details'], 403);
         }
 
         $tour->syncDynamicStatus();
@@ -251,11 +255,15 @@ class TourController extends Controller
     /**
      * Preview settlement calculations before completing tour
      */
-    public function settlementPreview(int $id, SettlementService $service): JsonResponse
+    public function settlementPreview(Request $request, int $id, SettlementService $service): JsonResponse
     {
         $tour = Tour::find($id);
         if (! $tour) {
             return response()->json(['success' => false, 'message' => 'Tour not found'], 404);
+        }
+
+        if (! $tour->canAccess($request->user())) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access to tour settlement preview'], 403);
         }
 
         $financials = $service->calculateTourFinancials($tour);
