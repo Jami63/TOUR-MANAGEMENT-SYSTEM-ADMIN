@@ -92,6 +92,14 @@
         <span>Don't have an account yet?</span>
         <a href="{{ route('register') }}" class="font-bold text-primary hover:underline ml-1">Create an account</a>
     </div>
+
+    <!-- Administrative Portal Link -->
+    <div class="mt-3 pt-3 border-t border-outline-variant/20 text-center">
+        <a href="{{ route('admin.login') }}" class="inline-flex items-center gap-1.5 text-xs text-outline hover:text-[#071c36] font-medium transition-colors">
+            <span class="material-symbols-outlined text-[16px]">shield_person</span>
+            <span>Super Administrator Terminal</span>
+        </a>
+    </div>
 </div>
 
 <script>

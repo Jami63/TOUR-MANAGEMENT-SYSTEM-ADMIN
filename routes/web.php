@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\TourMonitoringController as AdminTourController;
 use App\Http\Controllers\AuthController;
@@ -31,6 +32,13 @@ Route::get('/register/verify-otp', [AuthController::class, 'showVerifyOtp'])->na
 Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp'])->name('register.otp.verify');
 Route::post('/register/resend-otp', [AuthController::class, 'resendOtp'])->name('register.otp.resend');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Super Admin Dedicated Authentication Routes (Issue #7 - Admin & User Route Separation)
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+});
 
 // Public Legal & Compliance Documents (Google Play & Apple Store Requirements)
 Route::view('/privacy-policy', 'legal.privacy-policy')->name('legal.privacy');

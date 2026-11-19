@@ -34,5 +34,5 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 7. Admins and Regular Users Share the Same Front Door (`/login`)
-- **Simple Meaning:** The big boss admin and normal tour leaders both log in at the exact same public door, making it easier for hackers to try guessing passwords.
+### 7. Admins and Regular Users Share the Same Front Door (`/login`) (Status: FIXED ✅)
+- **Simple Meaning:** Previously, the big boss admin and normal tour leaders both logged in at the exact same public door, making it easier for hackers to try guessing passwords. (We fixed this: we built a private, separate, rate-limited "Admin Security Terminal" at `/admin/login` exclusively for Super Administrators with strict role verification; any normal manager or stranger trying to enter is immediately blocked, logged out, and locked out).

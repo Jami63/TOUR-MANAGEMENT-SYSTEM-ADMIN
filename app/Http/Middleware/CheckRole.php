@@ -15,7 +15,9 @@ class CheckRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (! Auth::check()) {
-            return redirect()->route('login');
+            return $request->is('admin*')
+                ? redirect()->route('admin.login')
+                : redirect()->route('login');
         }
 
         $user = Auth::user();

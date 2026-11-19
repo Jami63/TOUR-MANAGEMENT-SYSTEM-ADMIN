@@ -121,7 +121,7 @@
 
         <!-- Logout Action -->
         <div class="p-3 border-t border-white/10">
-            <form action="{{ route('logout') }}" method="POST">
+            <form action="{{ route('admin.logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:bg-error/20 hover:text-red-300 transition-colors group text-sm cursor-pointer">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
