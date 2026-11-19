@@ -8,174 +8,164 @@
 ## Contents
 1. What Is Safar Fly?
 2. The Most Important Idea: Everything Is Flexible
-3. User Roles
-4. Public Website Pages
-5. Tour Manager Dashboard
-6. Tour Management
-7. Tour Details Page
-8. Member Management
-9. Expense Management
-10. Expense Sharing System
-11. Expense-wise Payment Tracking
-12. Payment Management
-13. Refund Management
-14. Reports and Analytics
-15. Notifications
-16. Profile and Settings
-17. Tour Member Dashboard
-18. My Tour Details
-19. Member Pages: Expenses, Payments and Refunds
+3. User Roles & Permissions
+4. Public Website & Mobile Authentication Pages
+5. Tour Manager Dashboard & 5-Tab Mobile Navigation
+6. Tour Management & 20 Curated Categories
+7. Tour Details Page & Control Center
+8. Member Management & Traveler Directory
+9. Expense Management & Receipt Invoicing
+10. Precision Expense Auto-Splitting Engine
+11. Expense-wise & Advance Payment Tracking
+12. Payment Management: Submission & Verification
+13. Dynamic Category-wise Backpack Checklist Engine
+14. Tour Finish, Settlement & Fair Refund Engine
+15. Reports, Analytics & Data Export (PDF / Excel)
+16. SafarFly PRO Subscription System
+17. Super Admin Security Terminal & Web Portal
+18. Notifications, Profile & In-App Legal Compliance
+19. Database Architecture & Complete API Schema
 20. The Whole Journey in One Page
-21. Production Security, Mobile Ecosystem & Architecture
 
 ---
 
 ## 1. What Is Safar Fly?
-Safar Fly is a website and mobile application that helps a group of people organize a trip together and handle all the money side of it. Think of it as a smart notebook that keeps everyone's trip money in one clear place, so nobody has to ask *“Who paid? Who still owes? How much is left?”* in a messy group chat.
+Safar Fly is a cross-platform mobile application (built with Flutter for Android and iOS) and web administration portal (powered by Laravel 11 and MySQL) designed to organize group travel and transparently manage shared trip finances. Think of it as a smart group ledger that keeps every person's money records in one unified place, completely eliminating the confusion of *“Who paid? Who owes? How much is left in the fund?”* in messy group chats.
 
-**With Safar Fly you can:**
-- Create a tour (trip) and invite the people who are going.
-- Add every cost of the trip, such as bus fare, hotel or food.
-- Let the system split each cost between everyone automatically.
-- Collect money in small or large parts and keep a record of every payment.
-- See exactly who has paid and who still owes money.
-- Share the money that is left over fairly after the trip ends (refunds).
-
-### Key Words Used in This Guide
-| Word | Simple Meaning |
-| :--- | :--- |
-| **Tour** | One trip with its own people, costs and payments. |
-| **Tour Manager (Admin)** | The person who creates and runs the tour. He or she is also one of the travellers. |
-| **Tour Member** | A person who joins a tour and pays his or her share. |
-| **Participant** | Anyone going on the tour, including the Tour Manager. |
-| **Expense** | Something the tour must pay for, for example a hotel booking. |
-| **Share** | The part of an expense that one person has to pay. |
-| **Due** | The money a person still has to pay. |
-| **Refund** | Money given back to people when the tour is over and money is left. |
+**Key Words Used in This Guide:**
+- **Tour:** A travel event with its own dates, waypoints, participant roster, expenses, and isolated balance sheet.
+- **Tour Manager:** The leader who creates the tour, manages logistics, and verifies payments. *Always a participant too.*
+- **Tour Member:** A participant who joins the expedition, takes an equal share of costs, and submits payments.
+- **Expense:** A financial cost paid for the group (e.g. resort booking, vehicle hire, boat rent, group dinner).
+- **Share:** The exact portion of an expense allocated to one participant (`Amount ÷ Count`).
+- **Remaining Due:** The net outstanding balance a participant still owes (`Total Share − Total Paid`).
+- **Refund:** Excess money returned to a participant after trip completion when total collections exceed actual expenses.
+- **Super Admin:** The platform owner with read-only monitoring oversight via a dedicated, rate-limited security terminal.
 
 ---
 
 ## 2. The Most Important Idea: Everything Is Flexible
-Safar Fly is **not** made for one place, one kind of trip or one fixed list of costs. The Tour Manager decides everything. Nothing is locked in advance.
-
-- **2.1 Any Destination:** Dhaka to Cox's Bazar, Sylhet, Sajek, Bandarban, or multiple destinations (Sylhet → Ratargul → Jaflong).
-- **2.2 Any Tour Details:** Name, starting location, destinations, dates, budget, description. Starts as an empty form.
-- **2.3 Any Expense Category:** Custom categories (Bus Fare, Hotel, Food, Bonfire, Guide, Medicine).
-
----
-
-## 3. User Roles
-- **Role 1: Tour Manager (Admin):** Full control over tour creation, participants, expenses, payment verification, and refund calculations.
-  > **Very Important Rule:** The Tour Manager is **also a participant** in his or her own tour, taking an equal share of every expense.
-- **Role 2: Tour Member:** View tour details, personal expense share, payment history, remaining due, and submit payments.
+Safar Fly is **never locked to one place, one style of travel, or a static list of bills**. The Tour Manager has complete freedom over every parameter:
+- **Any Destination:** Single or multiple consecutive waypoints (e.g. *Dhaka → Sylhet → Ratargul → Jaflong*).
+- **Dynamic Metadata:** Title, start location, dates, duration, budget benchmark, itinerary notes.
+- **Infinite Custom Categories:** Default presets (Bus Fare, Hotel, Restaurant, Food, Boat Rent, Guide Fee) plus on-the-fly custom categories (Bonfire, BBQ, Jeep, Drone).
 
 ---
 
-## 4. Public Website Pages
-| Page | What It Is For | What It Does |
-| :--- | :--- | :--- |
-| **Home Page** | First page visitors see | Shows tagline, introduction, key benefits, Login/Register |
-| **About Page** | Explains the mission | Tells why Safar Fly was created and problems it solves |
-| **Features Page** | Capability overview | Custom tours, auto-splitting, payment tracking, refunds |
-| **Contact Page** | Support & inquiries | Simple message form and support channels |
-| **Registration Page** | Account sign-up | Name, email, phone, password with mandatory consent |
-| **Login Page** | System entry | Directs to Tour Manager or Tour Member dashboards |
+## 3. User Roles & Permissions
+Safar Fly enforces a strict three-tier role-based access control (RBAC) architecture:
+1. **Tour Manager (Admin):** Full control over tour planning, participant rosters, expenses, payment verification, and settlements.
+   > **Core Architectural Principle:** When a Tour Manager creates a tour, the database automatically enrolls them as **Member #1**. The manager pays their equal share, can have dues, and receives refunds exactly like every other traveler.
+2. **Tour Member:** Transparent access to personal shares, payment submission forms, payment history, and refund statuses.
+3. **Super Admin:** Strictly read-only monitoring console for centralized audit oversight across all platform tours.
 
 ---
 
-## 5. Tour Manager Dashboard
-- **Summary Cards:** Total Tours, Upcoming Tours, Ongoing Tours, Completed Tours, Total Members, Total Budget, Total Expense, Total Collected, Total Due, Remaining Balance.
-- **Activity Feeds:** Recent activities, upcoming tour schedules, pending payment alerts, expense logs.
+## 4. Public Website & Mobile Authentication Pages
+- **Splash Screen:** Instant 0ms offline rendering from local SQLite cache; zero-delay brand visibility.
+- **Login Screen:** Email/password authentication, server config switcher, discrete link to Super Admin Terminal.
+- **Register Screen:** User onboarding with mandatory consent checkbox linking to native Privacy Policy & Terms viewers.
+- **Email OTP Verification:** 6-digit numeric verification code dispatched to Gmail with 10-minute expiry.
+- **Account Deletion:** In-app and API account deletion fully compliant with Apple Guideline 5.1.1(v) and Google Play rules.
 
 ---
 
-## 6. Tour Management
-- Actions: View All Tours, Create New Tour, Edit Tour, Archive/Delete Tour, Search, Filter.
-- Tour Status: Upcoming, Ongoing, Completed, Cancelled.
-- **Multi-tour Isolation:** Every tour keeps separate financial records.
+## 5. Tour Manager Dashboard & 5-Tab Mobile Navigation
+Organized into an ergonomic 5-tab bottom navigation bar (`SafarBottomNavBar`):
+- **Tab 1 (Home):** Active Expedition hero card, Quick Actions, KPI summary cards, PRO banner.
+- **Tab 2 (Tours):** Directory of all tours with real-time search, status filter chips, and floating creation button.
+- **Tab 3 (Payments):** Master payment ledger with Verified/Pending/Rejected filters and verification queue.
+- **Tab 4 (Travelers):** Universal traveler directory across all expeditions with Settled/Due chips and direct dialer.
+- **Tab 5 (Profile):** User dossier, PRO badge, Legal Center (Privacy & Terms), Change Password, Logout, and Account Deletion.
 
 ---
 
-## 7. Tour Details Page
-Single dashboard displaying Tour Overview, Waypoints, Dates, Duration, Member Roster, Budget, Expense Breakdown, Payment Summary, Dues, and Event Timeline.
+## 6. Tour Management & 20 Curated Categories
+Every expedition is tagged with one or multiple categories from Safar Fly's **20 Curated Tour Categories**:
+1. Beach & Island Tours | 2. Mountain & Hiking Tours | 3. Adventure & Extreme Sports | 4. Cultural & Heritage | 5. Historical & Archaeological | 6. Wildlife & Safari | 7. Eco & Nature | 8. City & Sightseeing | 9. Religious & Pilgrimage | 10. Road Trips & Camping | 11. Luxury & Resort | 12. Cruise & Boat | 13. Food & Culinary | 14. Photography & Stargazing | 15. Wellness & Yoga | 16. Backpacking & Solo | 17. Festival & Event | 18. Winter & Snow Sports | 19. Desert Safari | 20. Family & Group Vacations.
 
 ---
 
-## 8. Member Management
-- Actions: Add Member, Create Account, Edit, Remove, View Payment History, View Expense-wise Dues.
-- Data Stored: Name, Email, Phone, Profile Photo, Tour Role, Total Share, Total Paid, Remaining Due, Status.
+## 7. Tour Details Page & Control Center
+Cockpit displaying: Hero Header with waypoints, Financial Progress Bar (Budget vs Actuals), Quick Actions (+ Expense, + Member, Record Payment, Backpack), KPI Cards, Travelers Roster, Category Expense List with photo receipts, Payment Activity Feed, and Finish Tour trigger.
 
 ---
 
-## 9. Expense Management
-- Record expenses with name, custom category, amount, date, description, receipt upload, and creator tracking.
-- Dynamic per-tour flexibility.
+## 8. Member Management & Traveler Directory
+- **Registered App Users:** Search by name/email/phone; instantly links `user_id` and surfaces tour on member's phone.
+- **Offline Guest Travelers:** Created with `user_id = null` for relatives/friends without smartphones; receives equal shares and dues.
 
 ---
 
-## 10. Expense Sharing System
-- **Formula:** `Each Person's Share = Total Expense Amount ÷ Total Participants`
-- **Remainder Precision:** Mathematical remainders down to 1 paisa are systematically allocated so zero money is lost.
+## 9. Expense Management & Receipt Invoicing
+Records title, custom category, amount, date, payer, notes, and cryptographic photo receipt uploads. Receipts stored securely with full-screen zoom preview.
 
 ---
 
-## 11. Expense-wise Payment Tracking
-- Every expense tracks individual participant payment status: **Paid**, **Partial**, or **Pending**.
+## 10. Precision Expense Auto-Splitting Engine
+- **Formula:** `Base Share = floor((Total Amount ÷ Member Count) * 100) / 100`
+- **1-Paisa Remainder Precision:** Fractional remainders are systematically assigned to Member #1 (Manager) so zero money is lost.
 
 ---
 
-## 12. Payment Management
-- Member submission steps: Select tour → Select expense → Enter amount → Choose bKash/Nagad/Cash → Enter TrxID → Upload proof.
-- Tour Manager verifies or rejects with feedback.
+## 11. Expense-wise & Advance Payment Tracking
+Accommodates direct advance deposits and itemized expense shares. Shows individual status: **Paid**, **Partial**, or **Pending**.
 
 ---
 
-## 13. Refund Management
-- Safe rule: **Collect outstanding member dues first before issuing refunds.**
-- **Formula:** `Refund = (Verified Paid) − (Share of Final Expenses) − Adjustments`
+## 12. Payment Management: Submission & Verification
+- **Submission:** Members select tour, expense, amount, channel (bKash, Nagad, Bank, Cash), TrxID, and screenshot proof.
+- **Verification:** Tour Manager audits against wallet statement and marks **Verified** (credits balance) or **Rejected** (with reason).
 
 ---
 
-## 14. Reports and Analytics
-- Full suite of reports: Tour Budget, Total Expense, Category-wise, Member-wise Payment, Dues, Refunds, Final Balance.
-- Export formats: **PDF** and **Excel**.
+## 13. Dynamic Category-wise Backpack Checklist Engine
+Pre-seeds packing essentials based on the tour's chosen 20 categories. Supports interactive checkbox toggles, custom gear entry, progress tracking, and category resetting.
 
 ---
 
-## 15. Notifications
-- Real-time alerts for member invitations, expense additions, payment submissions, verifications, due reminders, and schedule changes.
+## 14. Tour Finish, Settlement & Fair Refund Engine
+- **Golden Rule:** Finishing is blocked if `total_outstanding_due > 0`. All dues must be collected first.
+- **Formula:** `Refund Pool = Collections − Expenses`; `Individual Refund = Paid − Final Share`.
+- Supports Normal Finish and Emergency Finish (with mandatory emergency reason logging).
 
 ---
 
-## 16. Profile and Settings
-- Profile management, password reset, avatar upload, preference toggles, and secure session logout.
+## 15. Reports, Analytics & Data Export
+Automated budget variance, category pie charts, member ledgers, payment logs, and final balance sheets exportable to **PDF** and **Excel**.
 
 ---
 
-## 17. Tour Member Dashboard & Details (Chapters 17, 18, 19)
-- Member-centric view showing personal trip participation, individual share breakdown, payment submission modal, and refund tracking.
+## 16. SafarFly PRO Subscription System
+In-app monetization offering Monthly (৳299), Semi-Annual (৳1,499), and Annual (৳2,499) tiers unlocking unlimited tours, unlimited travelers, and verified organizer badges.
+
+---
+
+## 17. Super Admin Security Terminal & Web Portal
+Segregated administrative portal at `/admin/login` with `throttle:5,1` rate limiting, post-auth role checking, and read-only monitoring consoles.
+
+---
+
+## 18. Notifications, Profile & In-App Legal Compliance
+8 automated system event triggers paired with native dual-tab Privacy Policy & Terms of Service fulfilling Apple and Google store guidelines.
+
+---
+
+## 19. Database Architecture & Complete API Schema
+26 normalized MySQL tables with foreign key constraints, 35+ REST endpoints, Sanctum tokens, and 12-round Bcrypt password hashing.
 
 ---
 
 ## 20. The Whole Journey in One Page
-1. Visitor registers and logs in.
-2. Tour Manager creates a tour.
-3. Tour Manager adds participants (manager is participant #1).
-4. Tour Manager creates categories and adds expenses.
-5. System auto-splits expenses equally.
-6. Members submit payments in parts.
-7. Tour Manager verifies payments.
-8. System updates dues and reports automatically.
-9. Tour marked Completed after final costs are recorded.
-10. System checks collected funds vs final expenses and calculates refunds.
-11. Tour Manager disburses refunds via bKash/Nagad/Cash.
-12. Final Balance Report closes tour accounts.
-
----
-
-## 21. Production Security & New Architecture Features
-1. **Dedicated Super Admin Terminal:** `/admin/login` with `throttle:5,1` rate limiting and role gating.
-2. **Dynamic Backpack Checklist:** Category-tailored packing checklists across 20 expedition types.
-3. **SafarFly PRO Subscription:** Premium tiers unlocking unlimited squad sizes and advanced financial analytics.
-4. **Native Legal & Privacy Center:** In-app Privacy Policy & Terms compliant with Apple Guideline 5.1.1 and Google Play policies.
-5. **Mobile Security:** Disallowed cleartext HTTP (`usesCleartextTraffic="false"`), official 2048-bit RSA release keystore valid to 2054, and zero debug credential exposure.
+1. Visitor registers and completes email OTP verification.
+2. Tour Manager creates expedition with waypoints, dates, budget, and categories.
+3. System creates tour and enrolls Manager as Member #1.
+4. Manager adds travelers (registered or guests).
+5. System seeds category backpack checklists and initializes ledgers.
+6. Manager logs daily expenses with photo receipts.
+7. System auto-splits costs equally with 1-paisa remainder allocation.
+8. Members submit payments via bKash/Nagad/Cash with TrxIDs.
+9. Manager verifies proofs and credits balances.
+10. Manager collects remaining dues and triggers Finish Tour.
+11. System calculates refund pool and individual refunds.
+12. Manager disburses refunds, members confirm, and closed balance sheet completes the journey.
