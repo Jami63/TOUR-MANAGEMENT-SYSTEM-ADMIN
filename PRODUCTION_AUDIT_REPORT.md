@@ -43,9 +43,10 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
   - *Status:* **FIXED & HARDENED** (November 19, 2026)
   - *Location:* `lib/screens/legal_document_screen.dart`, `lib/screens/login_screen.dart`, `lib/screens/register_screen.dart`, `lib/screens/home_screen.dart`.
   - *Resolution:* Implemented dedicated native `LegalDocumentScreen` with dual tabs for Privacy Policy and Terms of Service, offline resilience, and dynamic web link resolution. Added clickable legal links in the `LoginScreen` footer, integrated mandatory agreement consent with clickable links on `RegisterScreen`, and added dedicated menu items in `HomeScreen` Account & Profile settings. Fully compliant with Apple App Store Guideline 5.1.1 and Google Play User Data policies. Verified with 5 automated widget tests (41/41 Flutter tests passing).
-- **P1-3: Cleartext Unencrypted HTTP Allowed (`usesCleartextTraffic="true"`)**:
-  - *Location:* `android/app/src/main/AndroidManifest.xml` (line 9).
-  - *Detail:* Financial transactions and tokens must travel exclusively over HTTPS. iOS App Transport Security (ATS) will block unencrypted `http://` API calls in production release mode.
+- **P1-3: [RESOLVED ✅] Cleartext Unencrypted HTTP Allowed (`usesCleartextTraffic="true"`)**:
+  - *Status:* **FIXED & HARDENED** (November 19, 2026)
+  - *Location:* `android/app/src/main/AndroidManifest.xml`, `android/app/src/main/res/xml/network_security_config.xml`, `android/app/src/debug/AndroidManifest.xml`.
+  - *Resolution:* Set `android:usesCleartextTraffic="false"` and linked `network_security_config.xml` to disallow all cleartext HTTP traffic across the application and explicitly pin production domains (`safarfly.com`, `api.safarfly.com`). Configured `android/app/src/debug/AndroidManifest.xml` to isolate cleartext LAN testing to debug builds only. Confirmed iOS App Transport Security (ATS) strictly enforces HTTPS without arbitrary loads. Verified with 5 automated network security tests (46/46 Flutter tests passing).
 
 ---
 

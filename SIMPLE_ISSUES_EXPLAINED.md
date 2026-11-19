@@ -29,8 +29,8 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 6. App Allows Plain Unsecured Internet (`usesCleartextTraffic`)
-- **Simple Meaning:** The app currently allows plain unencrypted HTTP traffic. For sensitive money data, Apple and Google require locked HTTPS encryption everywhere.
+### 6. App Allows Plain Unsecured Internet (`usesCleartextTraffic`) (Status: FIXED ✅)
+- **Simple Meaning:** The app was previously allowing plain unencrypted HTTP traffic. For sensitive money data, Apple and Google require locked HTTPS encryption everywhere. (We fixed this: locked Android to `usesCleartextTraffic="false"`, enabled strict XML network security config for production domains, and verified iOS App Transport Security so all data travels inside bank-grade encrypted HTTPS).
 
 ---
 
