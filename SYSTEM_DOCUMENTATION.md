@@ -1,4 +1,4 @@
-# SafarFlow – Complete System Documentation
+# Safar Fly – Complete System Documentation
 **Tour & Expense Management System**  
 *Plan Together. Travel Together. Manage Smarter.*  
 *A beginner-friendly guide written in simple language*
@@ -6,7 +6,7 @@
 ---
 
 ## Contents
-1. What Is SafarFlow?
+1. What Is Safar Fly?
 2. The Most Important Idea: Everything Is Flexible
 3. User Roles
 4. Public Website Pages
@@ -30,10 +30,10 @@
 
 ---
 
-## 1. What Is SafarFlow?
-SafarFlow is a website and mobile application that helps a group of people organize a trip together and handle all the money side of it. Think of it as a smart notebook that keeps everyone's trip money in one clear place, so nobody has to ask *“Who paid? Who still owes? How much is left?”* in a messy group chat.
+## 1. What Is Safar Fly?
+Safar Fly is a website and mobile application that helps a group of people organize a trip together and handle all the money side of it. Think of it as a smart notebook that keeps everyone's trip money in one clear place, so nobody has to ask *“Who paid? Who still owes? How much is left?”* in a messy group chat.
 
-**With SafarFlow you can:**
+**With Safar Fly you can:**
 - Create a tour (trip) and invite the people who are going.
 - Add every cost of the trip, such as bus fare, hotel or food.
 - Let the system split each cost between everyone automatically.
@@ -56,7 +56,7 @@ SafarFlow is a website and mobile application that helps a group of people organ
 ---
 
 ## 2. The Most Important Idea: Everything Is Flexible
-SafarFlow is **not** made for one place, one kind of trip or one fixed list of costs. The Tour Manager decides everything. Nothing is locked in advance.
+Safar Fly is **not** made for one place, one kind of trip or one fixed list of costs. The Tour Manager decides everything. Nothing is locked in advance.
 
 - **2.1 Any Destination:** Dhaka to Cox's Bazar, Sylhet, Sajek, Bandarban, or multiple destinations (Sylhet → Ratargul → Jaflong).
 - **2.2 Any Tour Details:** Name, starting location, destinations, dates, budget, description. Starts as an empty form.
@@ -75,7 +75,7 @@ SafarFlow is **not** made for one place, one kind of trip or one fixed list of c
 | Page | What It Is For | What It Does |
 | :--- | :--- | :--- |
 | **Home Page** | First page visitors see | Shows tagline, introduction, key benefits, Login/Register |
-| **About Page** | Explains the mission | Tells why SafarFlow was created and problems it solves |
+| **About Page** | Explains the mission | Tells why Safar Fly was created and problems it solves |
 | **Features Page** | Capability overview | Custom tours, auto-splitting, payment tracking, refunds |
 | **Contact Page** | Support & inquiries | Simple message form and support channels |
 | **Registration Page** | Account sign-up | Name, email, phone, password with mandatory consent |
