@@ -1,7 +1,0 @@
-docs(compliance): record issue #5 in-app privacy policy resolution
-
-- Record resolution of Issue #5 (Missing In-App Privacy Policy & Terms Links)
-- Update PRODUCTION_AUDIT_REPORT.md marking P1-2 as RESOLVED
-- Update SIMPLE_ISSUES_EXPLAINED.md marking Issue #5 as FIXED
-- Add ISSUE_5_TEST_REPORT.md with complete 15-scenario verification table
-- Verified 45/45 PHPUnit tests passing
