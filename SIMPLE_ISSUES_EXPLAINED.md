@@ -24,8 +24,8 @@ Here are the 7 major issues found before launching the SafarFly app, explained i
 
 ---
 
-### 5. Missing Privacy Policy Button Inside the App
-- **Simple Meaning:** Both Apple and Google legally require a button inside the app that says "Privacy Policy". Without it, store reviewers will reject the app immediately.
+### 5. Missing Privacy Policy Button Inside the App (Status: FIXED ✅)
+- **Simple Meaning:** Both Apple and Google legally require a button inside the app that says "Privacy Policy". Without it, store reviewers will reject the app immediately. (We fixed this: we built a dedicated in-app Legal & Compliance screen for Privacy Policy & Terms of Service, added clickable links on the Login screen, added mandatory consent links on the Registration screen, and added menu items in Account & Profile settings).
 
 ---
 

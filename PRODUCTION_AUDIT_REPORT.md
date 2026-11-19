@@ -39,9 +39,10 @@ Once these specific P0 and P1 issues are resolved, the app will be in prime cond
   - *Status:* **FIXED & HARDENED** (November 18, 2026)
   - *Location:* `android/app/build.gradle`, `android/key.properties`, `android/key.properties.example`, `android/app/safarfly-release-key.jks`.
   - *Resolution:* Generated official 2048-bit RSA production release keystore (`safarfly-release-key.jks`) valid for 10,000 days (until 2054) under `CN=SafarFly Release Manager, OU=Mobile Engineering, O=SafarFly`. Configured `android/key.properties` and updated `android/app/build.gradle` with robust resolution for release signing. Verified generated release APK signature (`CN=SafarFly Release Manager`) via `keytool -printcert -jarfile`, confirming zero debug certificate. Rebuilt production release APK (`SafarFly.apk`, 23.1 MB). Keystore and secret properties secured in `.gitignore`.
-- **P1-2: Missing In-App Privacy Policy & Terms Links**:
-  - *Location:* `lib/screens/login_screen.dart`, `lib/screens/register_screen.dart`, `lib/screens/home_screen.dart`.
-  - *Detail:* Apple App Store Guideline 5.1.1 and Google Play User Data policies mandate clickable in-app privacy policy links. Missing in-app links trigger automatic store review rejections.
+- **P1-2: [RESOLVED ✅] Missing In-App Privacy Policy & Terms Links**:
+  - *Status:* **FIXED & HARDENED** (November 19, 2026)
+  - *Location:* `lib/screens/legal_document_screen.dart`, `lib/screens/login_screen.dart`, `lib/screens/register_screen.dart`, `lib/screens/home_screen.dart`.
+  - *Resolution:* Implemented dedicated native `LegalDocumentScreen` with dual tabs for Privacy Policy and Terms of Service, offline resilience, and dynamic web link resolution. Added clickable legal links in the `LoginScreen` footer, integrated mandatory agreement consent with clickable links on `RegisterScreen`, and added dedicated menu items in `HomeScreen` Account & Profile settings. Fully compliant with Apple App Store Guideline 5.1.1 and Google Play User Data policies. Verified with 5 automated widget tests (41/41 Flutter tests passing).
 - **P1-3: Cleartext Unencrypted HTTP Allowed (`usesCleartextTraffic="true"`)**:
   - *Location:* `android/app/src/main/AndroidManifest.xml` (line 9).
   - *Detail:* Financial transactions and tokens must travel exclusively over HTTPS. iOS App Transport Security (ATS) will block unencrypted `http://` API calls in production release mode.
