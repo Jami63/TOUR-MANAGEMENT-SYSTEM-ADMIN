@@ -21,6 +21,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:6,1');
+Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp'])->middleware('throttle:6,1');
 
 // Authenticated Mobile Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -40,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tours/{id}', [TourController::class, 'destroy']);
     Route::get('/tours/{id}/settlement-preview', [TourController::class, 'settlementPreview']);
     Route::post('/tours/{id}/finish', [TourController::class, 'finish']);
+    Route::post('/tours/{id}/emergency-finish', [TourController::class, 'emergencyFinish']);
     Route::get('/tours/{id}/refunds', [TourController::class, 'refunds']);
     Route::post('/refunds/{refundId}/status', [TourController::class, 'updateRefundStatus']);
 

@@ -14,14 +14,16 @@ class OtpVerificationMail extends Mailable
 
     public string $otp;
     public string $fullName;
+    public string $purpose;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $otp, string $fullName = 'Tour Explorer')
+    public function __construct(string $otp, string $fullName = 'Tour Explorer', string $purpose = 'verification')
     {
         $this->otp = $otp;
         $this->fullName = $fullName;
+        $this->purpose = $purpose;
     }
 
     /**
@@ -29,8 +31,12 @@ class OtpVerificationMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = ($this->purpose === 'password_reset')
+            ? "Your Safar Fly Password Reset Code: {$this->otp}"
+            : "Your Safar Fly Verification Code: {$this->otp}";
+
         return new Envelope(
-            subject: "Your SafarFly Verification Code: {$this->otp}",
+            subject: $subject,
         );
     }
 
@@ -41,6 +47,11 @@ class OtpVerificationMail extends Mailable
     {
         return new Content(
             view: 'emails.otp_verification',
+            with: [
+                'otp' => $this->otp,
+                'fullName' => $this->fullName,
+                'purpose' => $this->purpose,
+            ],
         );
     }
 

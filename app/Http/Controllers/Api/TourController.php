@@ -21,19 +21,15 @@ class TourController extends Controller
     {
         $user = $request->user();
 
-        if ($user->role === 'manager') {
-            $tours = Tour::where('created_by', $user->id)
-                ->with(['destinations', 'members.user'])
-                ->latest()
-                ->get();
-        } else {
-            $tours = Tour::whereHas('members', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-                ->with(['destinations', 'creator'])
-                ->latest()
-                ->get();
-        }
+        $tours = Tour::where(function ($query) use ($user) {
+            $query->where('created_by', $user->id)
+                ->orWhereHas('members', function ($subQuery) use ($user) {
+                    $subQuery->where('user_id', $user->id);
+                });
+        })
+            ->with(['destinations', 'members.user', 'creator'])
+            ->latest()
+            ->get();
 
         foreach ($tours as $tour) {
             $tour->syncDynamicStatus();
@@ -302,6 +298,43 @@ class TourController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage() ?: 'Unable to finish tour.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Emergency Tour Finish (Handles early aborts or unresolved member dues)
+     */
+    public function emergencyFinish(Request $request, int $id, SettlementService $service): JsonResponse
+    {
+        $user = $request->user();
+        $tour = Tour::where('created_by', $user->id)->find($id);
+        if (! $tour) {
+            return response()->json(['success' => false, 'message' => 'Tour not found or unauthorized'], 404);
+        }
+
+        $validated = $request->validate([
+            'emergency_reason' => ['required', 'string', 'max:500'],
+            'settlement_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $financials = $service->emergencyFinishTour(
+                $tour,
+                $user,
+                $validated['emergency_reason'],
+                $validated['settlement_notes'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tour emergency settlement completed successfully.',
+                'settlement' => $financials,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Unable to emergency finish tour.',
             ], 500);
         }
     }

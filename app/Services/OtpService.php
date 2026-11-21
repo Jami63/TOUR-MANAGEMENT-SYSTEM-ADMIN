@@ -12,7 +12,7 @@ class OtpService
     /**
      * Generate a new 6-digit OTP, store payload, and dispatch email.
      */
-    public function generateAndSendOtp(string $email, array $payload): array
+    public function generateAndSendOtp(string $email, array $payload, string $purpose = 'verification'): array
     {
         $normalizedEmail = strtolower(trim($email));
 
@@ -53,8 +53,8 @@ class OtpService
         }
 
         try {
-            Mail::to($normalizedEmail)->send(new OtpVerificationMail($otp, $fullName));
-            Log::info("SafarFly OTP successfully dispatched to {$normalizedEmail}");
+            Mail::to($normalizedEmail)->send(new OtpVerificationMail($otp, $fullName, $purpose));
+            Log::info("Safar Fly OTP ({$purpose}) successfully dispatched to {$normalizedEmail}");
         } catch (\Throwable $e) {
             // Delete the unverified OTP record so an unsent OTP cannot be verified
             $record->delete();
@@ -134,6 +134,7 @@ class OtpService
             ];
         }
 
-        return $this->generateAndSendOtp($normalizedEmail, $record->payload);
+        $purpose = $record->payload['purpose'] ?? 'verification';
+        return $this->generateAndSendOtp($normalizedEmail, $record->payload, $purpose);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tour;
+use App\Models\TourMember;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\JsonResponse;
@@ -74,6 +75,16 @@ class AuthController extends Controller
         // Prevent race condition if user registered twice
         $existing = User::where('email', $payload['email'])->first();
         if ($existing) {
+            // Auto-link any unlinked tour member records invited prior to registration
+            TourMember::whereNull('user_id')
+                ->where(function ($q) use ($existing) {
+                    $q->where('email', $existing->email);
+                    if (! empty($existing->phone)) {
+                        $q->orWhere('phone', $existing->phone);
+                    }
+                })
+                ->update(['user_id' => $existing->id]);
+
             $token = $existing->createToken('mobile_app')->plainTextToken;
             return response()->json([
                 'success' => true,
@@ -91,6 +102,16 @@ class AuthController extends Controller
             'role' => $payload['role'] ?? 'manager',
             'email_verified_at' => now(),
         ]);
+
+        // Auto-link any unlinked tour member records invited prior to registration
+        TourMember::whereNull('user_id')
+            ->where(function ($q) use ($user) {
+                $q->where('email', $user->email);
+                if (! empty($user->phone)) {
+                    $q->orWhere('phone', $user->phone);
+                }
+            })
+            ->update(['user_id' => $user->id]);
 
         $token = $user->createToken('mobile_app')->plainTextToken;
 
@@ -147,6 +168,89 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $user->toApiArray(),
         ]);
+    }
+
+    /**
+     * Mobile Password Recovery Step 1: Send 6-Digit OTP to User's Email
+     */
+    public function forgotPassword(Request $request, OtpService $otpService): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email', 'max:255'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No Safar Fly account found with that email address.',
+            ], 404);
+        }
+
+        $result = $otpService->generateAndSendOtp($email, [
+            'purpose' => 'password_reset',
+            'user_id' => $user->id,
+            'full_name' => $user->full_name,
+        ], 'password_reset');
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A 6-digit password reset code has been sent to ' . $email . '. Please check your inbox.',
+            'email' => $email,
+        ], 200);
+    }
+
+    /**
+     * Mobile Password Recovery Step 2: Verify 6-Digit OTP & Set New Password
+     */
+    public function resetPasswordWithOtp(Request $request, OtpService $otpService): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'otp' => ['required', 'string', 'size:6'],
+            'password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $payload = $otpService->verifyOtp($validated['email'], $validated['otp']);
+
+        if (! $payload || ($payload['purpose'] ?? null) !== 'password_reset') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired verification code. Please request a new code.',
+            ], 422);
+        }
+
+        $user = User::where('email', strtolower(trim($validated['email'])))->first();
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User account not found.',
+            ], 404);
+        }
+
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        // Invalidate old tokens for security
+        $user->tokens()->delete();
+
+        $token = $user->createToken('mobile_app')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password reset successfully! You are now signed in.',
+            'token' => $token,
+            'user' => $user->toApiArray(),
+        ], 200);
     }
 
     /**
