@@ -1,51 +1,47 @@
-# Safar Fly - Production Dockerfile for Render / Cloud Deployment
 FROM php:8.3-apache
 
-# Install basic Linux utilities
+# Install required system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    zip \
-    unzip \
     git \
     curl \
+    libzip-dev \
+    libpq-dev \
+    unzip \
+    zip \
+    && docker-php-ext-install pdo_mysql pdo_pgsql bcmath zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install official pre-compiled PHP extensions (lightweight, zero compilation OOM)
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-RUN install-php-extensions pdo_mysql pdo_pgsql bcmath zip
-
-# Install official Composer binary
+# Install official Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Enable Apache mod_rewrite
+# Enable Apache rewrite module
 RUN a2enmod rewrite
 
-# Configure Apache DocumentRoot to Laravel public directory
+# Configure Apache
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 ENV PORT=10000
 
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf \
-    && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy all application code
+# Copy project files
 COPY . .
 
-# Install production dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install composer dependencies without executing scripts during build
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Create necessary storage directories and set permissions
-RUN mkdir -p /var/www/html/storage/framework/sessions \
-    /var/www/html/storage/framework/views \
-    /var/www/html/storage/framework/cache \
-    /var/www/html/storage/logs \
-    /var/www/html/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Ensure storage directories exist with proper permissions
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-# Copy entrypoint script and make executable
+# Setup entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
