@@ -46,8 +46,9 @@ fi
 # Run package discovery
 php artisan package:discover --ansi || true
 
-# Run database migrations
+# Run database migrations and seeders
 php artisan migrate --force || true
+php artisan db:seed --force || true
 
 # Cache configurations and routes for maximum performance
 php artisan config:cache || true

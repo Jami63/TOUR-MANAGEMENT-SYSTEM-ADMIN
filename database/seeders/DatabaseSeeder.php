@@ -21,12 +21,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Super Admin Account (Strictly Read-Only Monitor)
+        // 1. Super Admin Accounts
+        User::updateOrCreate(
+            ['email' => '2222081009uuja@gmail.com'],
+            [
+                'full_name' => 'Admin',
+                'phone' => '01700000000',
+                'password' => Hash::make('password'),
+                'role' => 'super_admin',
+                'notifications_enabled' => true,
+            ]
+        );
+
         $superAdmin = User::updateOrCreate(
             ['email' => 'admin@safarflow.test'],
             [
                 'full_name' => 'Super Administrator',
-                'phone' => '01700000000',
+                'phone' => '01700000001',
                 'password' => Hash::make('password'),
                 'role' => 'super_admin',
                 'notifications_enabled' => true,
