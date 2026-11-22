@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: safarfly-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: Dockerfile
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: SafarFly
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: safarfly-db
+          property: connectionString
+
+databases:
+  - name: safarfly-db
+    plan: free
+    region: singapore
+    databaseName: safarfly
+    user: safarfly
