@@ -15,6 +15,11 @@ if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DATABASE_URL" -a -z "$DB_HOST" ]; t
     chmod 664 /var/www/html/database/database.sqlite
 fi
 
+# Ensure .env exists
+if [ ! -f /var/www/html/.env ]; then
+    cp /var/www/html/.env.example /var/www/html/.env
+fi
+
 # Generate application key if missing
 if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
