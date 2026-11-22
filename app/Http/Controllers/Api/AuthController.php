@@ -21,10 +21,10 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['nullable', 'in:manager,member'],
+            'role' => ['nullable', 'in:manager,member,super_admin'],
         ]);
 
         // Default mobile registration role is manager (or member if explicitly requested)
